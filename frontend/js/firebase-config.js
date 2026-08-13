@@ -2,6 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Configuración de Firebase.
 // NOTA: una API key de Firebase Web NO es un secreto (viaja en el cliente),
@@ -26,4 +27,7 @@ try {
     console.warn("Analytics no disponible:", error);
 }
 
+// Exportamos la base de datos (Firestore) y la autenticación (Auth)
+// para usarlas en los otros archivos JS
 export const db = getFirestore(app);
+export const auth = getAuth(app);

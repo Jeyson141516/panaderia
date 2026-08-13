@@ -1,113 +1,100 @@
 /* ============================================================
    Autenticación y Route Guard — Panadería Familiar
    ------------------------------------------------------------
-   - Script clásico (no módulo) para ejecutarse de forma
-     SINCRÓNICA desde <head> y bloquear el render de la página.
-   - La sesión se persiste en localStorage.
-   - Si NO hay sesión válida y la página es protegida, se
-     redirige inmediatamente a login.html.
+   - Usa Firebase Authentication (método Correo/Contraseña).
+   - La sesión la gestiona Firebase automáticamente (token +
+     persistencia en localStorage del navegador).
+   - El Route Guard usa onAuthStateChanged para redirigir o
+     revelar el contenido una vez conocido el estado real.
    ============================================================ */
-(function () {
-    "use strict";
+import { auth } from './firebase-config.js';
+import {
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged,
+    setPersistence,
+    browserLocalPersistence
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // Credenciales del administrador del sistema.
-    // NOTA: al ser una app 100% de cliente (sin backend), esta
-    // validación es solo un candado visual. Para seguridad real,
-    // debe migrarse a Firebase Auth (ver firestore.rules.secure.example).
-    var USUARIO_ADMIN = "steven_admin";
-    var CLAVE_ADMIN = "14127722";
+// Persistencia automática de sesión (localStorage del navegador)
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+    console.error("Error al configurar persistencia de sesión:", error);
+});
 
-    var SESION_KEY = "panaderia_sesion";
-    var SESION_DURACION_MS = 12 * 60 * 60 * 1000; // 12 horas
+/* ---------- API de autenticación ---------- */
 
-    function obtenerNombrePagina() {
-        var ruta = window.location.pathname.split("/").pop();
-        return (ruta || "index.html").toLowerCase();
-    }
+export async function iniciarSesion(email, clave) {
+    const credencial = await signInWithEmailAndPassword(auth, email, clave);
+    return credencial.user;
+}
 
-    function iniciarSesion(usuario, clave) {
-        if (usuario === USUARIO_ADMIN && clave === CLAVE_ADMIN) {
-            try {
-                localStorage.setItem(SESION_KEY, JSON.stringify({
-                    usuario: usuario,
-                    iniciadoEn: Date.now()
-                }));
-                return true;
-            } catch (error) {
-                return false;
-            }
+export async function cerrarSesion() {
+    await signOut(auth);
+}
+
+export function obtenerUsuario() {
+    return auth.currentUser;
+}
+
+export function estaAutenticado() {
+    return auth.currentUser != null;
+}
+
+/* ---------- Utilidades ---------- */
+
+function obtenerNombrePagina() {
+    const ruta = window.location.pathname.split("/").pop();
+    return (ruta || "index.html").toLowerCase();
+}
+
+function revelarContenido() {
+    document.querySelectorAll("nav, main").forEach((el) => {
+        el.style.visibility = "visible";
+    });
+    const loader = document.querySelector(".auth-loader");
+    if (loader) loader.remove();
+}
+
+/* ---------- Route Guard ---------- */
+onAuthStateChanged(auth, (usuario) => {
+    const pagina = obtenerNombrePagina();
+
+    if (pagina === "login.html") {
+        if (usuario) {
+            window.location.replace("index.html");
+        } else {
+            revelarContenido();
         }
-        return false;
+        return;
     }
 
-    function cerrarSesion() {
-        localStorage.removeItem(SESION_KEY);
+    // Cualquier otra página es protegida
+    if (usuario) {
+        revelarContenido();
+
+        const spanUsuario = document.getElementById("navUsuario");
+        if (spanUsuario) spanUsuario.textContent = usuario.email || usuario.displayName || "usuario";
+    } else {
+        // Sin sesión: redirige al login de inmediato (bloquea el contenido)
+        window.location.replace("login.html");
     }
+});
 
-    function estaAutenticado() {
-        var raw = localStorage.getItem(SESION_KEY);
-        if (!raw) return false;
-
+/* ---------- Botón de "Cerrar sesión" ---------- */
+const btnLogout = document.getElementById("btnLogout");
+if (btnLogout) {
+    btnLogout.addEventListener("click", async () => {
         try {
-            var sesion = JSON.parse(raw);
-            if (!sesion.usuario) return false;
-            if (Date.now() - sesion.iniciadoEn > SESION_DURACION_MS) {
-                cerrarSesion();
-                return false;
-            }
-            return true;
-        } catch (error) {
-            cerrarSesion();
-            return false;
-        }
-    }
-
-    function obtenerUsuario() {
-        if (!estaAutenticado()) return null;
-        try {
-            return JSON.parse(localStorage.getItem(SESION_KEY)).usuario;
-        } catch (error) {
-            return null;
-        }
-    }
-
-    // ---------- Route Guard ----------
-    (function protegerRuta() {
-        var pagina = obtenerNombrePagina();
-
-        if (pagina === "login.html") {
-            if (estaAutenticado()) {
-                window.location.replace("index.html");
-            }
-            return;
-        }
-
-        // Cualquier otra página es protegida
-        if (!estaAutenticado()) {
+            await cerrarSesion();
+        } finally {
             window.location.replace("login.html");
         }
-    })();
-
-    // ---------- Botón de "Cerrar sesión" (si existe en la página) ----------
-    document.addEventListener("DOMContentLoaded", function () {
-        var btnLogout = document.getElementById("btnLogout");
-        if (btnLogout) {
-            btnLogout.addEventListener("click", function () {
-                cerrarSesion();
-                window.location.replace("login.html");
-            });
-        }
-
-        var spanUsuario = document.getElementById("navUsuario");
-        if (spanUsuario) {
-            spanUsuario.textContent = obtenerUsuario() || "";
-        }
     });
+}
 
-    window.PanaderiaAuth = {
-        iniciarSesion: iniciarSesion,
-        cerrarSesion: cerrarSesion,
-        estaAutenticado: estaAutenticado,
-        obtenerUsuario: obtenerUsuario
-    };
-})();
+window.PanaderiaAuth = {
+    iniciarSesion,
+    cerrarSesion,
+    obtenerUsuario,
+    estaAutenticado
+};

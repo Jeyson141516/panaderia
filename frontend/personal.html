@@ -8,9 +8,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
-    <script src="js/auth.js"></script>
+    <script type="module" src="js/auth.js"></script>
 </head>
 <body>
+    <div class="auth-loader"><div class="spinner"></div></div>
+
     <nav>
         <div class="brand">
             <span class="logo">🥖</span>
@@ -24,7 +26,7 @@
             <li><a href="limpiar-db.html" class="danger-link"><span class="nav-icon">🗑️</span> Limpiar BD</a></li>
         </ul>
         <div class="nav-footer">
-            <span class="nav-user">👤 <span id="navUsuario">steven_admin</span></span>
+            <span class="nav-user">👤 <span id="navUsuario">…</span></span>
             <button id="btnLogout" class="btn-logout">⏻ Cerrar sesión</button>
         </div>
     </nav>

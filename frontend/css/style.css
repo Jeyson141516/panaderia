@@ -835,6 +835,35 @@ button:disabled {
     margin-bottom: 18px;
 }
 
+/* ============ Guard de autenticación (flash-free) ============ */
+/* El contenido queda oculto hasta que Firebase confirme la sesión.
+   auth.js lo hace visible o redirige a login.html. */
+nav, main {
+    visibility: hidden;
+}
+
+.auth-loader {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(120deg, var(--bg-1), var(--bg-2), var(--bg-3));
+    z-index: 9999;
+}
+
+.spinner {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 4px solid rgba(99, 102, 241, .18);
+    border-top-color: var(--brand-1);
+    animation: spin .8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 /* ============ Responsive ============ */
 @media (max-width: 900px) {
     main {
