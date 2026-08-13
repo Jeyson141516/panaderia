@@ -3,7 +3,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Roboto', sans-serif; /* Cambio a una fuente más moderna */
 }
 
 body {
@@ -16,7 +16,7 @@ body {
 /* --- Barra de Navegación Lateral (Escritorio) --- */
 nav {
     width: 250px;
-    background-color: #2c3e50;
+    background-color: #2c3e50; /* Cambio a un color más oscuro y moderno */
     color: white;
     padding: 20px;
     display: flex;
@@ -46,6 +46,7 @@ nav ul li a {
     padding: 10px;
     border-radius: 6px;
     transition: all 0.3s ease;
+    background-color: rgba(255, 255, 255, 0.1); /* Añadimos un fondo transparente */
 }
 
 nav ul li a:hover, 
@@ -67,7 +68,7 @@ header {
 
 header h1 {
     font-size: 1.8rem;
-    color: #2c3e50;
+    color: #2c3e60; /* Cambio a un tono de azul más oscuro */
 }
 
 header p {
