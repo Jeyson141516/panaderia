@@ -61,6 +61,15 @@
                     </select>
                 </div>
 
+                <div class="form-group">
+                    <label for="fechaVenta">Fecha de la Venta</label>
+                    <select id="fechaVenta">
+                        <option value="0">Hoy</option>
+                        <option value="-1">Ayer</option>
+                        <option value="-2">Antes de ayer</option>
+                    </select>
+                </div>
+
                 <div class="total-box">
                     <h3>Total a Pagar: $<span id="totalPagar">1.00</span></h3>
                 </div>
@@ -70,7 +79,7 @@
         </section>
 
         <div id="ventas-dia-container" class="card card-wide">
-            <h3>🕐 Ventas del Día</h3>
+            <h3 id="ventasDiaTitulo">🕐 Ventas del Día</h3>
             <div class="ventas-grid">
                 <div class="ventas-col">
                     <h4 class="ventas-col-title pagado">Clientes que han Pagado (Contado)</h4>

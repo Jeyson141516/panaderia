@@ -11,6 +11,8 @@ const formVenta = document.getElementById('formVenta');
 const clienteBusqueda = document.getElementById('clienteBusqueda');
 const listaSugerencias = document.getElementById('listaSugerencias');
 const estadoPagoSelect = document.getElementById('estadoPago');
+const fechaVentaSelect = document.getElementById('fechaVenta');
+const ventasDiaTitulo = document.getElementById('ventasDiaTitulo');
 
 const btnAbrirModal = document.getElementById('btnAbrirModal');
 const modalCliente = document.getElementById('modalCliente');
@@ -23,11 +25,28 @@ const tablaVentasPagado = document.getElementById('tablaVentasPagado');
 const tablaVentasDebe = document.getElementById('tablaVentasDebe');
 const ventasDiaCache = [];
 
-function fechaHoyLocal() {
+const ETIQUETAS_PERIODO = { "0": "Hoy", "-1": "Ayer", "-2": "Antes de ayer" };
+
+function offsetDiasSeleccionado() {
+    return parseInt(fechaVentaSelect.value, 10) || 0;
+}
+
+function fechaInicioPeriodo() {
     const d = new Date();
-    const dd = String(d.getDate()).padStart(2, '0');
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    return `${d.getFullYear()}-${mm}-${dd}`;
+    d.setDate(d.getDate() + offsetDiasSeleccionado());
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+function fechaFinPeriodo() {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDiasSeleccionado());
+    d.setHours(23, 59, 59, 999);
+    return d;
+}
+
+function etiquetaPeriodo() {
+    return ETIQUETAS_PERIODO[fechaVentaSelect.value] || "Hoy";
 }
 
 function formatearMoneda(valor) {
@@ -57,15 +76,16 @@ function renderVentasDia() {
     const pagadas = ventasDiaCache.filter((v) => v.estado !== 'debe');
     const pendientes = ventasDiaCache.filter((v) => v.estado === 'debe');
 
-    renderTablaVentas(tablaVentasPagado, pagadas, 'Aún no hay ventas pagadas hoy.');
+    renderTablaVentas(tablaVentasPagado, pagadas, 'Aún no hay ventas pagadas en el período seleccionado.');
     renderTablaVentas(tablaVentasDebe, pendientes, 'No hay deudas pendientes. Todo al día.');
 }
 
 async function cargarVentasDelDia() {
     try {
-        const hoy = fechaHoyLocal();
-        const inicio = new Date(`${hoy}T00:00:00`);
-        const fin = new Date(`${hoy}T23:59:59.999`);
+        const inicio = fechaInicioPeriodo();
+        const fin = fechaFinPeriodo();
+
+        ventasDiaTitulo.textContent = `Ventas del Día (${etiquetaPeriodo()})`;
 
         const querySnapshot = await getDocs(
             query(collection(db, "ventas"),
@@ -99,6 +119,11 @@ cantidadInput.addEventListener('input', (e) => {
     const cantidad = parseInt(e.target.value, 10);
     const total = Number.isFinite(cantidad) && cantidad > 0 ? cantidad * PRECIO_FUNDA : 0;
     totalPagarSpan.textContent = total.toFixed(2);
+});
+
+fechaVentaSelect.addEventListener('change', () => {
+    ventasDiaTitulo.textContent = `Ventas del Día (${etiquetaPeriodo()})`;
+    cargarVentasDelDia();
 });
 
 let clientesCache = [];
@@ -284,6 +309,8 @@ formVenta.addEventListener('submit', async (e) => {
 
     const total = cantidad * PRECIO_FUNDA;
     const estadoPago = estadoPagoSelect.value;
+    const fechaVenta = new Date();
+    fechaVenta.setDate(fechaVenta.getDate() + offsetDiasSeleccionado());
 
     try {
         await addDoc(collection(db, "ventas"), {
@@ -291,7 +318,7 @@ formVenta.addEventListener('submit', async (e) => {
             cantidadFundas: cantidad,
             totalVenta: total,
             estadoPago: estadoPago,
-            fecha: serverTimestamp()
+            fecha: fechaVenta
         });
 
         toast(estadoPago === 'debe'
@@ -303,11 +330,13 @@ formVenta.addEventListener('submit', async (e) => {
             cantidad,
             total,
             estado: estadoPago,
-            hora: formatearHora(new Date())
+            hora: formatearHora(fechaVenta)
         });
         renderVentasDia();
 
+        const fechaSeleccionada = fechaVentaSelect.value;
         formVenta.reset();
+        fechaVentaSelect.value = fechaSeleccionada;
         cerrarSugerencias();
         totalPagarSpan.textContent = PRECIO_FUNDA.toFixed(2);
         clienteBusqueda.value = "";
