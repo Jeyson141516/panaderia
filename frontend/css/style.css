@@ -787,6 +787,23 @@ button:disabled {
     }
 }
 
+.hidden {
+    display: none !important;
+}
+
+.abono-row td {
+    background: rgba(99, 102, 241, .06);
+}
+
+.saldo-cell {
+    color: var(--danger);
+}
+
+.btn-abonar {
+    padding: 7px 14px;
+    font-size: 0.8rem;
+}
+
 /* ============ Badges ============ */
 .badge {
     display: inline-block;
@@ -805,6 +822,11 @@ button:disabled {
 .badge.pago {
     background: rgba(34, 197, 94, .16);
     color: #15803d;
+}
+
+.badge.abono {
+    background: rgba(99, 102, 241, .16);
+    color: var(--brand-1);
 }
 
 /* ============ Reportes de Empleados ============ */
@@ -1026,8 +1048,7 @@ button:disabled {
     padding: 12px;
 }
 
-/* ============ Toasts ============ */
-.toast-container {
+/* ============ Toasts ============ */.toast-container {
     position: fixed;
     bottom: 24px;
     right: 24px;

@@ -6,6 +6,7 @@ const btnConsultar = document.getElementById('btnConsultar');
 const btnPdf = document.getElementById('btnPdf');
 const lblContado = document.getElementById('lblContado');
 const lblCredito = document.getElementById('lblCredito');
+const lblAbonos = document.getElementById('lblAbonos');
 const lblPendiente = document.getElementById('lblPendiente');
 const lblTotal = document.getElementById('lblTotal');
 const listaMejoresClientes = document.getElementById('listaMejoresClientes');
@@ -114,6 +115,7 @@ async function cargarReporte() {
         let totalVentas = 0;
         let totalContado = 0;
         let totalCredito = 0;
+        let totalAbonos = 0;
         let totalFundas = 0;
         let clientesMap = {};
 
@@ -132,6 +134,8 @@ async function cargarReporte() {
                     totalContado += monto;
                 } else if (estado === 'debe') {
                     totalCredito += monto;
+                } else if (estado === 'abono') {
+                    totalAbonos += monto;
                 }
 
                 const cliente = venta.cliente || "Cliente General";
@@ -159,6 +163,7 @@ async function cargarReporte() {
         const utilidadNeta = totalVentas - totalGastos - totalAPagar;
 
         const totalFacturado = totalContado + totalCredito;
+        const totalPendiente = Math.max(0, totalCredito - totalAbonos);
 
         ultimoReporte = {
             fechaInicio: fechaInicioInput.value,
@@ -167,7 +172,8 @@ async function cargarReporte() {
             periodo: periodoFiltro.value,
             totalContado,
             totalCredito,
-            totalPendiente: totalCredito,
+            totalAbonos,
+            totalPendiente,
             totalFacturado,
             totalFundas,
             totalVentas,
@@ -191,12 +197,14 @@ async function cargarReporte() {
 
         lblContado.textContent = formatearMoneda(totalContado);
         lblCredito.textContent = formatearMoneda(totalCredito);
-        lblPendiente.textContent = formatearMoneda(totalCredito);
+        lblAbonos.textContent = formatearMoneda(totalAbonos);
+        lblPendiente.textContent = formatearMoneda(totalPendiente);
         lblTotal.textContent = formatearMoneda(totalFacturado);
 
         infoGrafico1.innerHTML = `
             Contado: <b>${formatearMoneda(totalContado)}</b><br>
             Fiado/Crédito: <b>${formatearMoneda(totalCredito)}</b><br>
+            Abonos recibidos: <b>${formatearMoneda(totalAbonos)}</b><br>
             Fundas vendidas: <b>${totalFundas}</b>`;
         infoGrafico1.classList.remove('empty-state');
 
@@ -363,6 +371,7 @@ function abrirVentanaImpresion() {
             <div class="grid">
                 <div class="box">Contado<b>${formatearMoneda(r.totalContado)}</b></div>
                 <div class="box">Fiado / Crédito<b>${formatearMoneda(r.totalCredito)}</b></div>
+                <div class="box">Abonos recibidos<b>${formatearMoneda(r.totalAbonos)}</b></div>
                 <div class="box">Pendiente de cobro<b>${formatearMoneda(r.totalPendiente)}</b></div>
                 <div class="box">Total Facturado<b>${formatearMoneda(r.totalFacturado)}</b></div>
                 <div class="box">Fundas vendidas<b>${r.totalFundas}</b></div>

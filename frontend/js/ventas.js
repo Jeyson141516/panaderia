@@ -7,12 +7,16 @@ const PRECIO_FUNDA = 1.00;
 
 const cantidadInput = document.getElementById('cantidad');
 const totalPagarSpan = document.getElementById('totalPagar');
+const totalLabel = document.getElementById('totalLabel');
 const formVenta = document.getElementById('formVenta');
 const clienteBusqueda = document.getElementById('clienteBusqueda');
 const listaSugerencias = document.getElementById('listaSugerencias');
 const estadoPagoSelect = document.getElementById('estadoPago');
 const fechaVentaSelect = document.getElementById('fechaVenta');
 const ventasDiaTitulo = document.getElementById('ventasDiaTitulo');
+const grupoCantidad = document.getElementById('grupoCantidad');
+const grupoAbono = document.getElementById('grupoAbono');
+const montoAbonoInput = document.getElementById('montoAbono');
 
 const btnAbrirModal = document.getElementById('btnAbrirModal');
 const modalCliente = document.getElementById('modalCliente');
@@ -24,6 +28,7 @@ const nuevoTelefonoInput = document.getElementById('nuevoTelefono');
 const tablaVentasPagado = document.getElementById('tablaVentasPagado');
 const tablaVentasDebe = document.getElementById('tablaVentasDebe');
 const ventasDiaCache = [];
+let saldosMap = {};
 
 const ETIQUETAS_PERIODO = { "0": "Hoy", "-1": "Ayer", "-2": "Antes de ayer" };
 
@@ -64,20 +69,75 @@ function renderTablaVentas(tbody, ventas, mensajeVacio) {
     }
 
     tbody.innerHTML = ventas.map((v) => `
-        <tr>
-            <td>${escapeHtml(v.cliente)}</td>
-            <td>${v.cantidad}</td>
+        <tr class="${v.esAbono ? 'abono-row' : ''}">
+            <td>${v.esAbono ? '<span class="badge abono">Abono</span> ' : ''}${escapeHtml(v.cliente)}</td>
+            <td>${v.esAbono ? '—' : v.cantidad}</td>
             <td class="monto-cell">${formatearMoneda(v.total)}</td>
             <td>${v.hora}</td>
         </tr>`).join("");
 }
 
+function agruparPendientes(pendientes) {
+    const mapa = new Map();
+    pendientes.forEach((p) => {
+        const fila = mapa.get(p.cliente) || { cliente: p.cliente, saldo: 0, ultimaHora: p.hora };
+        fila.saldo = Math.max(0, saldosMap[p.cliente] || 0);
+        if (p.hora > fila.ultimaHora) fila.ultimaHora = p.hora;
+        mapa.set(p.cliente, fila);
+    });
+    return [...mapa.values()].sort((a, b) => b.saldo - a.saldo);
+}
+
+function renderDebe(pendientes) {
+    if (pendientes.length === 0) {
+        tablaVentasDebe.innerHTML = '<tr><td colspan="4" class="empty-cell">No hay deudas pendientes en el período seleccionado. Todo al día.</td></tr>';
+        return;
+    }
+
+    tablaVentasDebe.innerHTML = pendientes.map((r) => {
+        const accion = r.saldo > 0
+            ? `<button type="button" class="btn-accion btn-abonar" data-cliente="${escapeHtml(r.cliente)}">Abonar</button>`
+            : '<span class="badge pago">Pagado</span>';
+        return `
+        <tr>
+            <td>${escapeHtml(r.cliente)}</td>
+            <td class="monto-cell saldo-cell">${formatearMoneda(r.saldo)}</td>
+            <td>${r.ultimaHora}</td>
+            <td class="actions-cell">${accion}</td>
+        </tr>`;
+    }).join("");
+}
+
 function renderVentasDia() {
-    const pagadas = ventasDiaCache.filter((v) => v.estado !== 'debe');
+    const pagadas = ventasDiaCache.filter((v) => v.estado === 'pagado');
+    const abonos = ventasDiaCache.filter((v) => v.estado === 'abono');
     const pendientes = ventasDiaCache.filter((v) => v.estado === 'debe');
 
-    renderTablaVentas(tablaVentasPagado, pagadas, 'Aún no hay ventas pagadas en el período seleccionado.');
-    renderTablaVentas(tablaVentasDebe, pendientes, 'No hay deudas pendientes. Todo al día.');
+    renderTablaVentas(
+        tablaVentasPagado,
+        [...pagadas, ...abonos.map((a) => ({ ...a, esAbono: true }))],
+        'Aún no hay pagos recibidos en el período seleccionado.'
+    );
+    renderDebe(agruparPendientes(pendientes));
+}
+
+async function cargarSaldos() {
+    const snapshot = await getDocs(
+        query(collection(db, "ventas"),
+            where("estadoPago", "in", ["debe", "abono"]))
+    );
+
+    saldosMap = {};
+    snapshot.forEach((docSnap) => {
+        const v = docSnap.data();
+        const nombre = v.cliente || "Cliente General";
+        const monto = Number(v.totalVenta) || 0;
+        if (v.estadoPago === 'debe') {
+            saldosMap[nombre] = (saldosMap[nombre] || 0) + monto;
+        } else if (v.estadoPago === 'abono') {
+            saldosMap[nombre] = (saldosMap[nombre] || 0) - monto;
+        }
+    });
 }
 
 async function cargarVentasDelDia() {
@@ -87,12 +147,15 @@ async function cargarVentasDelDia() {
 
         ventasDiaTitulo.textContent = `Ventas del Día (${etiquetaPeriodo()})`;
 
-        const querySnapshot = await getDocs(
-            query(collection(db, "ventas"),
-                where("fecha", ">=", inicio),
-                where("fecha", "<=", fin),
-                orderBy("fecha", "desc"))
-        );
+        const [querySnapshot] = await Promise.all([
+            getDocs(
+                query(collection(db, "ventas"),
+                    where("fecha", ">=", inicio),
+                    where("fecha", "<=", fin),
+                    orderBy("fecha", "desc"))
+            ),
+            cargarSaldos()
+        ]);
 
         ventasDiaCache.length = 0;
 
@@ -115,15 +178,56 @@ async function cargarVentasDelDia() {
     }
 }
 
-cantidadInput.addEventListener('input', (e) => {
-    const cantidad = parseInt(e.target.value, 10);
+function actualizarTotalVenta() {
+    const cantidad = parseInt(cantidadInput.value, 10);
     const total = Number.isFinite(cantidad) && cantidad > 0 ? cantidad * PRECIO_FUNDA : 0;
     totalPagarSpan.textContent = total.toFixed(2);
-});
+}
+
+function actualizarTotalAbono() {
+    const monto = parseFloat(montoAbonoInput.value);
+    totalPagarSpan.textContent = (Number.isFinite(monto) && monto > 0 ? monto : 0).toFixed(2);
+}
+
+function actualizarFormularioAbono() {
+    const esAbono = estadoPagoSelect.value === 'abono';
+    grupoCantidad.classList.toggle('hidden', esAbono);
+    grupoAbono.classList.toggle('hidden', !esAbono);
+    cantidadInput.required = !esAbono;
+    totalLabel.textContent = esAbono ? 'Monto a Abonar' : 'Total a Pagar';
+    if (esAbono) {
+        actualizarTotalAbono();
+    } else {
+        actualizarTotalVenta();
+    }
+}
+
+cantidadInput.addEventListener('input', actualizarTotalVenta);
+
+montoAbonoInput.addEventListener('input', actualizarTotalAbono);
+
+estadoPagoSelect.addEventListener('change', actualizarFormularioAbono);
 
 fechaVentaSelect.addEventListener('change', () => {
     ventasDiaTitulo.textContent = `Ventas del Día (${etiquetaPeriodo()})`;
     cargarVentasDelDia();
+});
+
+function prepararAbono(cliente) {
+    clienteBusqueda.value = cliente;
+    estadoPagoSelect.value = 'abono';
+    actualizarFormularioAbono();
+    montoAbonoInput.value = (saldosMap[cliente] > 0 ? saldosMap[cliente] : 0).toFixed(2);
+    actualizarTotalAbono();
+    cerrarSugerencias();
+    formVenta.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    montoAbonoInput.focus();
+}
+
+tablaVentasDebe.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-abonar');
+    if (!btn) return;
+    prepararAbono(btn.dataset.cliente);
 });
 
 let clientesCache = [];
@@ -299,51 +403,66 @@ guardarClienteModal.addEventListener('click', async () => {
 formVenta.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const cliente = clienteBusqueda.value.trim() || "Cliente General";
-    const cantidad = parseInt(cantidadInput.value, 10);
-
-    if (!Number.isFinite(cantidad) || cantidad <= 0) {
-        toast("Ingresa una cantidad válida de fundas.", "warning");
-        return;
-    }
-
-    const total = cantidad * PRECIO_FUNDA;
+    const cliente = clienteBusqueda.value.trim();
     const estadoPago = estadoPagoSelect.value;
     const fechaVenta = new Date();
     fechaVenta.setDate(fechaVenta.getDate() + offsetDiasSeleccionado());
 
     try {
-        await addDoc(collection(db, "ventas"), {
-            cliente: cliente,
-            cantidadFundas: cantidad,
-            totalVenta: total,
-            estadoPago: estadoPago,
-            fecha: fechaVenta
-        });
+        if (estadoPago === 'abono') {
+            if (!cliente) {
+                toast("Selecciona el cliente que está abonando.", "warning");
+                return;
+            }
+            const monto = parseFloat(montoAbonoInput.value);
+            if (!Number.isFinite(monto) || monto <= 0) {
+                toast("Ingresa un monto de abono válido.", "warning");
+                return;
+            }
 
-        toast(estadoPago === 'debe'
-            ? "¡Venta registrada como FIADA (Pendiente)!"
-            : "¡Venta registrada con éxito!");
+            await addDoc(collection(db, "ventas"), {
+                cliente,
+                cantidadFundas: 0,
+                totalVenta: monto,
+                estadoPago: 'abono',
+                montoAbono: monto,
+                fecha: fechaVenta
+            });
 
-        ventasDiaCache.unshift({
-            cliente,
-            cantidad,
-            total,
-            estado: estadoPago,
-            hora: formatearHora(fechaVenta)
-        });
-        renderVentasDia();
+            toast("¡Abono registrado! Deuda actualizada.");
+        } else {
+            const cantidad = parseInt(cantidadInput.value, 10);
+            if (!Number.isFinite(cantidad) || cantidad <= 0) {
+                toast("Ingresa una cantidad válida de fundas.", "warning");
+                return;
+            }
+
+            const total = cantidad * PRECIO_FUNDA;
+            await addDoc(collection(db, "ventas"), {
+                cliente: cliente || "Cliente General",
+                cantidadFundas: cantidad,
+                totalVenta: total,
+                estadoPago,
+                fecha: fechaVenta
+            });
+
+            toast(estadoPago === 'debe'
+                ? "¡Venta registrada como FIADA (Pendiente)!"
+                : "¡Venta registrada con éxito!");
+        }
 
         const fechaSeleccionada = fechaVentaSelect.value;
         formVenta.reset();
         fechaVentaSelect.value = fechaSeleccionada;
+        estadoPagoSelect.value = "pagado";
+        actualizarFormularioAbono();
         cerrarSugerencias();
         totalPagarSpan.textContent = PRECIO_FUNDA.toFixed(2);
         clienteBusqueda.value = "";
-        estadoPagoSelect.value = "pagado";
+        await cargarVentasDelDia();
     } catch (error) {
-        console.error("Error al registrar venta: ", error);
-        toast("Hubo un error al guardar la venta.", "error");
+        console.error("Error al registrar transacción: ", error);
+        toast("Hubo un error al guardar la transacción.", "error");
     }
 });
 

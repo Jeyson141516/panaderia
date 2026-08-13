@@ -61,6 +61,7 @@
                     <option value="todos">Todos</option>
                     <option value="pagado">Pagado (Contado)</option>
                     <option value="debe">Por Cobrar (Fiado)</option>
+                    <option value="abono">Abonos (Pagos de Deuda)</option>
                 </select>
             </div>
             <div class="filtro-actions">
@@ -124,6 +125,11 @@
             <div class="metric-card warning">
                 <h4>Ventas a Crédito (Fiado)</h4>
                 <span id="lblCredito" style="color: var(--warning);">$0.00</span>
+            </div>
+            <div class="metric-card info">
+                <h4>Abonos del Período</h4>
+                <span id="lblAbonos" style="color: var(--info);">$0.00</span>
+                <small>Pagos recibidos que reducen cuentas por cobrar</small>
             </div>
             <div class="metric-card danger">
                 <h4>Total Pendiente de Cobro</h4>

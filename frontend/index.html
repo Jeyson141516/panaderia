@@ -48,17 +48,23 @@
                     <ul id="listaSugerencias" class="suggestion-list"></ul>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" id="grupoCantidad">
                     <label for="cantidad">Cantidad de Fundas</label>
                     <input type="number" id="cantidad" min="1" value="1" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="estadoPago">Estado de la Venta</label>
+                    <label for="estadoPago">Tipo de Transacción</label>
                     <select id="estadoPago">
                         <option value="pagado">Pagado (Contado)</option>
-                        <option value="debe">Quedó Debiendo (Fiado)</option>
+                        <option value="debe">Fiado (Pendiente)</option>
+                        <option value="abono">Abono / Pago de Deuda</option>
                     </select>
+                </div>
+
+                <div class="form-group hidden" id="grupoAbono">
+                    <label for="montoAbono">Monto del Abono ($)</label>
+                    <input type="number" id="montoAbono" min="0.01" step="0.01" placeholder="0.00">
                 </div>
 
                 <div class="form-group">
@@ -71,7 +77,7 @@
                 </div>
 
                 <div class="total-box">
-                    <h3>Total a Pagar: $<span id="totalPagar">1.00</span></h3>
+                    <h3><span id="totalLabel">Total a Pagar</span>: $<span id="totalPagar">1.00</span></h3>
                 </div>
 
                 <button type="submit" class="btn-primary">Registrar Venta</button>
@@ -106,9 +112,9 @@
                             <thead>
                                 <tr>
                                     <th>Cliente</th>
-                                    <th>Cantidad</th>
-                                    <th>Total</th>
-                                    <th>Hora</th>
+                                    <th>Saldo Pendiente</th>
+                                    <th>Última Hora</th>
+                                    <th>Acción</th>
                                 </tr>
                             </thead>
                             <tbody id="tablaVentasDebe">
