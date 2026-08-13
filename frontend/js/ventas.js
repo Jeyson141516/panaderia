@@ -19,7 +19,8 @@ const guardarClienteModal = document.getElementById('guardarClienteModal');
 const nuevoNombreInput = document.getElementById('nuevoNombre');
 const nuevoTelefonoInput = document.getElementById('nuevoTelefono');
 
-const tablaVentasDia = document.getElementById('tablaVentasDia');
+const tablaVentasPagado = document.getElementById('tablaVentasPagado');
+const tablaVentasDebe = document.getElementById('tablaVentasDebe');
 const ventasDiaCache = [];
 
 function fechaHoyLocal() {
@@ -37,19 +38,27 @@ function formatearHora(fecha) {
     return `${String(fecha.getHours()).padStart(2, '0')}:${String(fecha.getMinutes()).padStart(2, '0')}`;
 }
 
-function renderVentasDia() {
-    if (ventasDiaCache.length === 0) {
-        tablaVentasDia.innerHTML = '<tr><td colspan="4" class="empty-cell">Aún no hay ventas registradas hoy.</td></tr>';
+function renderTablaVentas(tbody, ventas, mensajeVacio) {
+    if (ventas.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="empty-cell">${mensajeVacio}</td></tr>`;
         return;
     }
 
-    tablaVentasDia.innerHTML = ventasDiaCache.map((v) => `
+    tbody.innerHTML = ventas.map((v) => `
         <tr>
             <td>${escapeHtml(v.cliente)}</td>
             <td>${v.cantidad}</td>
             <td class="monto-cell">${formatearMoneda(v.total)}</td>
             <td>${v.hora}</td>
         </tr>`).join("");
+}
+
+function renderVentasDia() {
+    const pagadas = ventasDiaCache.filter((v) => v.estado !== 'debe');
+    const pendientes = ventasDiaCache.filter((v) => v.estado === 'debe');
+
+    renderTablaVentas(tablaVentasPagado, pagadas, 'Aún no hay ventas pagadas hoy.');
+    renderTablaVentas(tablaVentasDebe, pendientes, 'No hay deudas pendientes. Todo al día.');
 }
 
 async function cargarVentasDelDia() {
@@ -73,6 +82,7 @@ async function cargarVentasDelDia() {
                 cliente: v.cliente || "Cliente General",
                 cantidad: Number(v.cantidadFundas) || 0,
                 total: Number(v.totalVenta) || 0,
+                estado: v.estadoPago || "pagado",
                 hora: v.fecha && v.fecha.toDate ? formatearHora(v.fecha.toDate()) : "--:--"
             });
         });
@@ -80,7 +90,8 @@ async function cargarVentasDelDia() {
         renderVentasDia();
     } catch (error) {
         console.error("Error cargando ventas del día:", error);
-        tablaVentasDia.innerHTML = '<tr><td colspan="4" class="empty-cell">No se pudieron cargar las ventas del día.</td></tr>';
+        tablaVentasPagado.innerHTML = '<tr><td colspan="4" class="empty-cell">No se pudieron cargar las ventas del día.</td></tr>';
+        tablaVentasDebe.innerHTML = '<tr><td colspan="4" class="empty-cell">No se pudieron cargar las ventas del día.</td></tr>';
     }
 }
 
@@ -291,6 +302,7 @@ formVenta.addEventListener('submit', async (e) => {
             cliente,
             cantidad,
             total,
+            estado: estadoPago,
             hora: formatearHora(new Date())
         });
         renderVentasDia();

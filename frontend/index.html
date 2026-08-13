@@ -69,22 +69,45 @@
             </form>
         </section>
 
-        <div id="ventas-dia-container" class="card">
+        <div id="ventas-dia-container" class="card card-wide">
             <h3>🕐 Ventas del Día</h3>
-            <div class="table-wrap">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Cliente</th>
-                            <th>Cantidad</th>
-                            <th>Total</th>
-                            <th>Hora</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaVentasDia">
-                        <tr><td colspan="4" class="empty-cell">Cargando ventas de hoy...</td></tr>
-                    </tbody>
-                </table>
+            <div class="ventas-grid">
+                <div class="ventas-col">
+                    <h4 class="ventas-col-title pagado">Clientes que han Pagado (Contado)</h4>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Cantidad</th>
+                                    <th>Total</th>
+                                    <th>Hora</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaVentasPagado">
+                                <tr><td colspan="4" class="empty-cell">Cargando ventas de hoy...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="ventas-col">
+                    <h4 class="ventas-col-title pendiente">Clientes que Deben (Fiado / Pendiente)</h4>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Cantidad</th>
+                                    <th>Total</th>
+                                    <th>Hora</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaVentasDebe">
+                                <tr><td colspan="4" class="empty-cell">Cargando ventas de hoy...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
