@@ -11,6 +11,9 @@ const totalLabel = document.getElementById('totalLabel');
 const formVenta = document.getElementById('formVenta');
 const clienteBusqueda = document.getElementById('clienteBusqueda');
 const listaSugerencias = document.getElementById('listaSugerencias');
+const saldoInfo = document.getElementById('clienteSaldoInfo');
+const saldoInfoText = document.getElementById('clienteSaldoText');
+const btnAbonoSaldo = document.getElementById('btnAbonoSaldo');
 const estadoPagoSelect = document.getElementById('estadoPago');
 const fechaVentaSelect = document.getElementById('fechaVenta');
 const ventasDiaTitulo = document.getElementById('ventasDiaTitulo');
@@ -29,6 +32,7 @@ const tablaVentasPagado = document.getElementById('tablaVentasPagado');
 const tablaVentasDebe = document.getElementById('tablaVentasDebe');
 const ventasDiaCache = [];
 let saldosMap = {};
+let saldosNormMap = {};
 
 const ETIQUETAS_PERIODO = { "0": "Hoy", "-1": "Ayer", "-2": "Antes de ayer" };
 
@@ -128,15 +132,19 @@ async function cargarSaldos() {
     );
 
     saldosMap = {};
+    saldosNormMap = {};
     snapshot.forEach((docSnap) => {
         const v = docSnap.data();
         const nombre = v.cliente || "Cliente General";
         const monto = Number(v.totalVenta) || 0;
+        let saldo = saldosMap[nombre] || 0;
         if (v.estadoPago === 'debe') {
-            saldosMap[nombre] = (saldosMap[nombre] || 0) + monto;
+            saldo += monto;
         } else if (v.estadoPago === 'abono') {
-            saldosMap[nombre] = (saldosMap[nombre] || 0) - monto;
+            saldo -= monto;
         }
+        saldosMap[nombre] = saldo;
+        saldosNormMap[normalizarTexto(nombre)] = { nombre, saldo };
     });
 }
 
@@ -215,6 +223,7 @@ fechaVentaSelect.addEventListener('change', () => {
 
 function prepararAbono(cliente) {
     clienteBusqueda.value = cliente;
+    actualizarInfoSaldo(cliente);
     estadoPagoSelect.value = 'abono';
     actualizarFormularioAbono();
     montoAbonoInput.value = (saldosMap[cliente] > 0 ? saldosMap[cliente] : 0).toFixed(2);
@@ -259,9 +268,59 @@ function cerrarSugerencias() {
     indiceActivo = -1;
 }
 
+let clienteSaldoSeleccionado = null;
+let debounceSaldoTimer = null;
+
+function buscarClienteExacto(nombre) {
+    const norm = normalizarTexto(nombre);
+    return clientesCache.some((c) => c.nombreNorm === norm);
+}
+
+function ocultarInfoSaldo() {
+    clienteSaldoSeleccionado = null;
+    saldoInfo.classList.add('hidden');
+}
+
+function actualizarInfoSaldo(nombre) {
+    const texto = (nombre || '').trim();
+    if (!texto) {
+        ocultarInfoSaldo();
+        return;
+    }
+
+    const info = saldosNormMap[normalizarTexto(texto)];
+    if (info) {
+        clienteSaldoSeleccionado = info.nombre;
+        const restante = Math.max(0, info.saldo);
+        if (restante > 0) {
+            saldoInfoText.textContent = `Saldo pendiente: ${formatearMoneda(restante)}`;
+            saldoInfoText.className = 'saldo-info-text pendiente';
+            btnAbonoSaldo.classList.remove('hidden');
+        } else {
+            saldoInfoText.textContent = 'Sin deudas pendientes';
+            saldoInfoText.className = 'saldo-info-text al-dia';
+            btnAbonoSaldo.classList.add('hidden');
+        }
+        saldoInfo.classList.remove('hidden');
+    } else if (buscarClienteExacto(texto)) {
+        clienteSaldoSeleccionado = texto;
+        saldoInfoText.textContent = 'Sin deudas pendientes';
+        saldoInfoText.className = 'saldo-info-text al-dia';
+        btnAbonoSaldo.classList.add('hidden');
+        saldoInfo.classList.remove('hidden');
+    } else {
+        ocultarInfoSaldo();
+    }
+}
+
+btnAbonoSaldo.addEventListener('click', () => {
+    if (clienteSaldoSeleccionado) prepararAbono(clienteSaldoSeleccionado);
+});
+
 function seleccionarCliente(nombre) {
     clienteBusqueda.value = nombre;
     cerrarSugerencias();
+    actualizarInfoSaldo(nombre);
     clienteBusqueda.focus();
 }
 
@@ -277,11 +336,15 @@ clienteBusqueda.addEventListener('input', async (e) => {
 
     if (texto.length === 0) {
         cerrarSugerencias();
+        ocultarInfoSaldo();
         return;
     }
 
     await cargarClientes();
     buscarClientes(texto);
+
+    clearTimeout(debounceSaldoTimer);
+    debounceSaldoTimer = setTimeout(() => actualizarInfoSaldo(texto), 300);
 });
 
 function buscarClientes(texto) {
@@ -459,6 +522,7 @@ formVenta.addEventListener('submit', async (e) => {
         cerrarSugerencias();
         totalPagarSpan.textContent = PRECIO_FUNDA.toFixed(2);
         clienteBusqueda.value = "";
+        ocultarInfoSaldo();
         await cargarVentasDelDia();
     } catch (error) {
         console.error("Error al registrar transacción: ", error);

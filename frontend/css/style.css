@@ -924,6 +924,7 @@ button:disabled {
 }
 
 .search-row {
+    position: relative;
     display: flex;
     gap: 10px;
 }
@@ -998,6 +999,44 @@ button:disabled {
 .suggestion-list li.no-result:hover,
 .suggestion-list li.no-result.active {
     background: transparent;
+}
+
+/* ============ Saldo en tiempo real ============ */
+.saldo-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--border);
+    font-size: 0.88rem;
+    animation: saldoIn .16s ease-out;
+}
+
+.saldo-info-text {
+    font-size: 0.9rem;
+}
+
+.saldo-info-text.pendiente {
+    color: var(--danger);
+    font-weight: 700;
+}
+
+.saldo-info-text.al-dia {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.saldo-info .btn-abonar {
+    margin-left: auto;
+}
+
+@keyframes saldoIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: none; }
 }
 
 /* ============ Modal ============ */
