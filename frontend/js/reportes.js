@@ -44,19 +44,32 @@ window.addEventListener('DOMContentLoaded', () => {
 
 btnConsultar.addEventListener('click', cargarReporte);
 
+function bloquearFechas(bloqueado) {
+    fechaInicioInput.disabled = bloqueado;
+    fechaFinInput.disabled = bloqueado;
+}
+
 periodoFiltro.addEventListener('change', () => {
     const hoy = new Date();
 
-    if (periodoFiltro.value === 'semana') {
-        const diasDesdeLunes = (hoy.getDay() + 6) % 7;
-        const lunes = new Date(hoy);
-        lunes.setDate(hoy.getDate() - diasDesdeLunes);
-        fechaInicioInput.value = fechaISO(lunes);
+    if (periodoFiltro.value === 'hoy') {
+        fechaInicioInput.value = fechaISO(hoy);
         fechaFinInput.value = fechaISO(hoy);
-    } else if (periodoFiltro.value === 'mes') {
-        const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-        fechaInicioInput.value = fechaISO(primerDia);
-        fechaFinInput.value = fechaISO(hoy);
+        bloquearFechas(true);
+    } else {
+        bloquearFechas(false);
+
+        if (periodoFiltro.value === 'semana') {
+            const diasDesdeLunes = (hoy.getDay() + 6) % 7;
+            const lunes = new Date(hoy);
+            lunes.setDate(hoy.getDate() - diasDesdeLunes);
+            fechaInicioInput.value = fechaISO(lunes);
+            fechaFinInput.value = fechaISO(hoy);
+        } else if (periodoFiltro.value === 'mes') {
+            const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+            fechaInicioInput.value = fechaISO(primerDia);
+            fechaFinInput.value = fechaISO(hoy);
+        }
     }
 
     cargarReporte();
@@ -295,7 +308,7 @@ function abrirVentanaImpresion() {
     }
 
     const r = ultimoReporte;
-    const etiquetaPeriodo = r.periodo === 'semana' ? 'Semana' : r.periodo === 'mes' ? 'Mes' : 'Personalizado';
+    const etiquetaPeriodo = r.periodo === 'hoy' ? 'Hoy' : r.periodo === 'semana' ? 'Semana' : r.periodo === 'mes' ? 'Mes' : 'Personalizado';
     const clientesHtml = r.clientes.length > 0
         ? r.clientes.map(([cli, fundas], index) =>
             `<tr><td>${index + 1}</td><td>${escapeHtml(cli)}</td><td style="text-align:right">${fundas} fundas</td></tr>`).join('')
