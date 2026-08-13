@@ -42,7 +42,7 @@ btnLimpiar.addEventListener('click', async () => {
     establecerEstado("Eliminando datos, por favor espera...", "#d35400");
 
     try {
-        const colecciones = ["ventas", "clientes"];
+        const colecciones = ["ventas", "clientes", "inventario", "gastos_inventario", "adelantos", "pagos_personal"];
         let totalEliminados = 0;
 
         for (const nombreColeccion of colecciones) {

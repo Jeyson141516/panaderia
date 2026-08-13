@@ -33,27 +33,82 @@
 
     <main>
         <header>
-            <h1>Control de Gastos por Inventario</h1>
-            <p>Registra los insumos y gastos de producción de la panadería.</p>
+            <h1>Inventario y Gastos</h1>
+            <p>Registra gastos de producción y administra los productos e insumos del negocio.</p>
         </header>
 
         <div class="card">
-            <h3>Registrar Gasto / Insumo</h3>
+            <h3>💸 Registrar Gasto de Producción</h3>
             <form id="formGasto">
-                <div class="form-group">
-                    <label for="descripcion">Insumo o Gasto (Ej. Harina, Manteca, Leña)</label>
-                    <input type="text" id="descripcion" required placeholder="Nombre del insumo">
+                <div class="form-group search-wrap">
+                    <label for="productoBusqueda">Producto / Ingrediente</label>
+                    <div class="search-row">
+                        <input type="text" id="productoBusqueda" placeholder="Buscar o escribir producto (ej. harina)..." autocomplete="off">
+                        <button type="button" id="btnNuevoProducto" class="btn-secondary">+ Nuevo</button>
+                    </div>
+                    <ul id="listaSugerenciasProducto" class="suggestion-list"></ul>
                 </div>
 
                 <div class="form-group">
-                    <label for="monto">Costo / Gasto ($)</label>
+                    <label for="monto">Monto del gasto ($)</label>
                     <input type="number" step="0.01" min="0.01" id="monto" required placeholder="0.00">
                 </div>
 
-                <button type="submit" class="btn-primary">Registrar Gasto de Inventario</button>
+                <button type="submit" class="btn-primary">＋ Añadir Gasto</button>
             </form>
         </div>
+
+        <div class="card card-wide">
+            <h3>📋 Inventario General</h3>
+            <input type="text" id="busquedaInventario" class="inventory-search" placeholder="🔍 Buscar en la lista...">
+
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaInventario">
+                        <tr><td colspan="2" class="empty-cell">Cargando inventario...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card card-wide">
+            <h3>🧾 Historial de Gastos Realizados</h3>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Producto / Concepto</th>
+                            <th>Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaGastos">
+                        <tr><td colspan="3" class="empty-cell">Cargando gastos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </main>
+
+    <div id="modalProducto" class="modal">
+        <div class="modal-card">
+            <h3>Registrar Nuevo Producto</h3>
+            <div class="form-group">
+                <label for="nuevoNombreProducto">Nombre del producto / ingrediente</label>
+                <input type="text" id="nuevoNombreProducto" placeholder="Ej. Harina, Azúcar, Manteca">
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="guardarProductoModal" class="btn-success">Guardar</button>
+                <button type="button" id="cerrarModalProducto" class="btn-danger">Cancelar</button>
+            </div>
+        </div>
+    </div>
 
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 

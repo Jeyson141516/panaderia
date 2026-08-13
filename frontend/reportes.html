@@ -39,6 +39,14 @@
 
         <div class="filtros-container">
             <div class="filtro-group">
+                <label for="periodoFiltro">Período</label>
+                <select id="periodoFiltro">
+                    <option value="mes">Este Mes</option>
+                    <option value="semana">Esta Semana</option>
+                    <option value="personalizado">Personalizado</option>
+                </select>
+            </div>
+            <div class="filtro-group">
                 <label for="fechaInicio">Fecha de inicio</label>
                 <input type="date" id="fechaInicio">
             </div>
@@ -59,6 +67,53 @@
                 <button id="btnPdf" class="btn-accion success">📥 Descargar PDF</button>
             </div>
         </div>
+
+        <h2 class="section-title">💰 Resumen Financiero</h2>
+        <div class="metrics-grid">
+            <div class="metric-card success">
+                <h4>Total de Ventas (Ingresos)</h4>
+                <span id="lblResVentas" style="color: var(--success);">$0.00</span>
+            </div>
+            <div class="metric-card warning">
+                <h4>Total de Gastos (Insumos)</h4>
+                <span id="lblResGastos" style="color: var(--warning);">$0.00</span>
+            </div>
+            <div class="metric-card danger">
+                <h4>Total a Pagar a Personal</h4>
+                <span id="lblResPersonal" style="color: var(--danger);">$0.00</span>
+                <small id="lblResPersonalDetalle">Salario Total: $0.00 · Adelantos: $0.00</small>
+            </div>
+            <div class="metric-card info">
+                <h4>Utilidad Neta</h4>
+                <span id="lblResUtilidad" style="color: var(--info);">$0.00</span>
+                <small>Ventas − Gastos − Total a Pagar</small>
+            </div>
+        </div>
+
+        <h2 class="section-title">👥 Detalle de Pagos por Trabajador</h2>
+        <div class="chart-box">
+            <div class="chart-actions">
+                <h3>Total a Pagar = Salario Total − Adelantos</h3>
+                <button id="btnCsv" class="btn-accion success">📥 Exportar CSV</button>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Trabajador</th>
+                            <th>Salario Total</th>
+                            <th>Adelantos</th>
+                            <th>Total a Pagar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaPagosTrabajadores">
+                        <tr><td colspan="4" class="empty-cell">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h2 class="section-title">📅 Detalle de Ventas</h2>
 
         <div class="metrics-grid">
             <div class="metric-card success">

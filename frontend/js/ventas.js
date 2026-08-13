@@ -1,6 +1,7 @@
 import { db } from './firebase-config.js';
-import { collection, addDoc, getDocs, serverTimestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { toast } from './ui.js';
+import { collection, addDoc, getDocs, serverTimestamp, query, where, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { toast, escapeHtml } from './ui.js';
+import { normalizarTexto } from './utils.js';
 
 const PRECIO_FUNDA = 1.00;
 
@@ -18,71 +19,189 @@ const guardarClienteModal = document.getElementById('guardarClienteModal');
 const nuevoNombreInput = document.getElementById('nuevoNombre');
 const nuevoTelefonoInput = document.getElementById('nuevoTelefono');
 
+const tablaVentasDia = document.getElementById('tablaVentasDia');
+const ventasDiaCache = [];
+
+function fechaHoyLocal() {
+    const d = new Date();
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+function formatearMoneda(valor) {
+    return `$${Number(valor).toFixed(2)}`;
+}
+
+function formatearHora(fecha) {
+    return `${String(fecha.getHours()).padStart(2, '0')}:${String(fecha.getMinutes()).padStart(2, '0')}`;
+}
+
+function renderVentasDia() {
+    if (ventasDiaCache.length === 0) {
+        tablaVentasDia.innerHTML = '<tr><td colspan="4" class="empty-cell">Aún no hay ventas registradas hoy.</td></tr>';
+        return;
+    }
+
+    tablaVentasDia.innerHTML = ventasDiaCache.map((v) => `
+        <tr>
+            <td>${escapeHtml(v.cliente)}</td>
+            <td>${v.cantidad}</td>
+            <td class="monto-cell">${formatearMoneda(v.total)}</td>
+            <td>${v.hora}</td>
+        </tr>`).join("");
+}
+
+async function cargarVentasDelDia() {
+    try {
+        const hoy = fechaHoyLocal();
+        const inicio = new Date(`${hoy}T00:00:00`);
+        const fin = new Date(`${hoy}T23:59:59.999`);
+
+        const querySnapshot = await getDocs(
+            query(collection(db, "ventas"),
+                where("fecha", ">=", inicio),
+                where("fecha", "<=", fin),
+                orderBy("fecha", "desc"))
+        );
+
+        ventasDiaCache.length = 0;
+
+        querySnapshot.forEach((docSnap) => {
+            const v = docSnap.data();
+            ventasDiaCache.push({
+                cliente: v.cliente || "Cliente General",
+                cantidad: Number(v.cantidadFundas) || 0,
+                total: Number(v.totalVenta) || 0,
+                hora: v.fecha && v.fecha.toDate ? formatearHora(v.fecha.toDate()) : "--:--"
+            });
+        });
+
+        renderVentasDia();
+    } catch (error) {
+        console.error("Error cargando ventas del día:", error);
+        tablaVentasDia.innerHTML = '<tr><td colspan="4" class="empty-cell">No se pudieron cargar las ventas del día.</td></tr>';
+    }
+}
+
 cantidadInput.addEventListener('input', (e) => {
     const cantidad = parseInt(e.target.value, 10);
     const total = Number.isFinite(cantidad) && cantidad > 0 ? cantidad * PRECIO_FUNDA : 0;
     totalPagarSpan.textContent = total.toFixed(2);
 });
 
-let busquedaSeq = 0;
-let debounceTimer = null;
+let clientesCache = [];
+let indiceActivo = -1;
+let clientesPromise = null;
 
-clienteBusqueda.addEventListener('input', (e) => {
+function cargarClientes() {
+    if (!clientesPromise) {
+        clientesPromise = getDocs(collection(db, "clientes")).then((querySnapshot) => {
+            clientesCache = querySnapshot.docs
+                .map((docSnap) => {
+                    const nombre = String(docSnap.data().nombre || "").trim();
+                    return {
+                        id: docSnap.id,
+                        nombre,
+                        nombreNorm: normalizarTexto(nombre)
+                    };
+                })
+                .filter((c) => c.nombre.length > 0);
+
+            clientesCache.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+        });
+    }
+    return clientesPromise;
+}
+
+function cerrarSugerencias() {
+    listaSugerencias.style.display = 'none';
+    indiceActivo = -1;
+}
+
+function seleccionarCliente(nombre) {
+    clienteBusqueda.value = nombre;
+    cerrarSugerencias();
+    clienteBusqueda.focus();
+}
+
+function actualizarResaltado() {
+    listaSugerencias.querySelectorAll('li').forEach((li, i) => {
+        li.classList.toggle('active', i === indiceActivo && !li.classList.contains('no-result'));
+    });
+}
+
+clienteBusqueda.addEventListener('input', async (e) => {
     const texto = e.target.value.trim();
-    clearTimeout(debounceTimer);
+    indiceActivo = -1;
 
     if (texto.length === 0) {
-        listaSugerencias.style.display = 'none';
+        cerrarSugerencias();
         return;
     }
 
-    debounceTimer = setTimeout(() => buscarClientes(texto), 220);
+    await cargarClientes();
+    buscarClientes(texto);
 });
 
-async function buscarClientes(texto) {
-    const secuencia = ++busquedaSeq;
-    const termino = texto.toLowerCase();
+function buscarClientes(texto) {
+    const termino = normalizarTexto(texto);
 
-    try {
-        const querySnapshot = await getDocs(
-            query(collection(db, "clientes"), orderBy("nombre"), limit(20))
-        );
+    listaSugerencias.innerHTML = '';
+    indiceActivo = -1;
+    let matches = 0;
 
-        if (secuencia !== busquedaSeq) return;
-
-        listaSugerencias.innerHTML = '';
-        let matches = 0;
-
-        querySnapshot.forEach((docSnap) => {
-            const cliente = docSnap.data();
-            const nombre = cliente.nombre || '';
-            if (nombre.toLowerCase().includes(termino)) {
-                matches++;
-                const li = document.createElement('li');
-                li.textContent = nombre;
-                li.addEventListener('click', () => {
-                    clienteBusqueda.value = nombre;
-                    listaSugerencias.style.display = 'none';
-                });
-                listaSugerencias.appendChild(li);
-            }
-        });
-
-        if (matches === 0) {
+    clientesCache.forEach((cliente) => {
+        if (cliente.nombreNorm.includes(termino)) {
+            matches++;
             const li = document.createElement('li');
-            li.className = 'no-result';
-            li.textContent = 'No se encontró el cliente. Usa "+ Nuevo"';
+            li.textContent = cliente.nombre;
+            li.addEventListener('click', () => seleccionarCliente(cliente.nombre));
+            li.addEventListener('mouseenter', () => {
+                indiceActivo = matches - 1;
+                actualizarResaltado();
+            });
             listaSugerencias.appendChild(li);
         }
-        listaSugerencias.style.display = 'block';
-    } catch (error) {
-        console.error("Error buscando clientes:", error);
+    });
+
+    if (matches === 0) {
+        const li = document.createElement('li');
+        li.className = 'no-result';
+        li.textContent = 'No se encontró el cliente. Usa "+ Nuevo"';
+        listaSugerencias.appendChild(li);
     }
+    listaSugerencias.style.display = 'block';
 }
+
+clienteBusqueda.addEventListener('keydown', (e) => {
+    if (listaSugerencias.style.display === 'none') return;
+
+    const items = [...listaSugerencias.querySelectorAll('li')].filter((li) => !li.classList.contains('no-result'));
+    if (items.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        indiceActivo = indiceActivo < items.length - 1 ? indiceActivo + 1 : 0;
+        actualizarResaltado();
+        items[indiceActivo].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        indiceActivo = indiceActivo > 0 ? indiceActivo - 1 : items.length - 1;
+        actualizarResaltado();
+        items[indiceActivo].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        seleccionarCliente(items[Math.max(indiceActivo, 0)].textContent);
+    } else if (e.key === 'Escape') {
+        e.preventDefault();
+        cerrarSugerencias();
+    }
+});
 
 document.addEventListener('click', (e) => {
     if (!clienteBusqueda.contains(e.target) && !listaSugerencias.contains(e.target)) {
-        listaSugerencias.style.display = 'none';
+        cerrarSugerencias();
     }
 });
 
@@ -111,16 +230,29 @@ guardarClienteModal.addEventListener('click', async () => {
         return;
     }
 
+    const nombreNorm = normalizarTexto(nombre);
+
     try {
-        await addDoc(collection(db, "clientes"), {
+        const existente = await getDocs(query(collection(db, "clientes"), where("nombreNorm", "==", nombreNorm), limit(1)));
+
+        if (!existente.empty) {
+            toast("Ya existe un cliente con ese nombre.", "warning");
+            return;
+        }
+
+        const ref = await addDoc(collection(db, "clientes"), {
             nombre: nombre,
+            nombreNorm,
             telefono: telefono,
             fechaRegistro: serverTimestamp()
         });
 
+        clientesCache.push({ id: ref.id, nombre, nombreNorm });
+        clientesCache.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+
         toast("¡Cliente guardado con éxito!");
         clienteBusqueda.value = nombre;
-        listaSugerencias.style.display = 'none';
+        buscarClientes(nombre);
         cerrarModalHandler();
     } catch (error) {
         console.error("Error al guardar cliente:", error);
@@ -155,7 +287,16 @@ formVenta.addEventListener('submit', async (e) => {
             ? "¡Venta registrada como FIADA (Pendiente)!"
             : "¡Venta registrada con éxito!");
 
+        ventasDiaCache.unshift({
+            cliente,
+            cantidad,
+            total,
+            hora: formatearHora(new Date())
+        });
+        renderVentasDia();
+
         formVenta.reset();
+        cerrarSugerencias();
         totalPagarSpan.textContent = PRECIO_FUNDA.toFixed(2);
         clienteBusqueda.value = "";
         estadoPagoSelect.value = "pagado";
@@ -164,3 +305,5 @@ formVenta.addEventListener('submit', async (e) => {
         toast("Hubo un error al guardar la venta.", "error");
     }
 });
+
+cargarVentasDelDia();

@@ -34,28 +34,121 @@
     <main>
         <header>
             <h1>Gestión de Personal y Adelantos</h1>
-            <p>Registra los adelantos de sueldo de los trabajadores.</p>
+            <p>Pagos de jornal/semana y control de adelantos de Patucho, Lucho y Flaquito.</p>
         </header>
 
+        <div class="metrics-grid" id="resumenPersonal">
+            <div class="summary-card"><h4>Cargando resumen...</h4></div>
+        </div>
+
         <div class="card">
-            <h3>Registrar Adelanto (Ej. $10)</h3>
-            <form id="formAdelanto">
+            <h3>Registrar Movimiento</h3>
+            <form id="formMovimiento">
                 <div class="form-group">
-                    <label for="trabajador">Seleccionar Trabajador</label>
+                    <label for="trabajador">Trabajador</label>
                     <select id="trabajador" required>
-                        <option value="Trabajador 1 (Lun-Vie)">Trabajador 1 (Lun-Vie)</option>
-                        <option value="Trabajador 2 (Lun-Vie)">Trabajador 2 (Lun-Vie)</option>
-                        <option value="Trabajador 3 (Comodín Fines de Semana)">Trabajador 3 (Comodín Fines de Semana)</option>
+                        <option value="Patucho">Patucho</option>
+                        <option value="Lucho">Lucho</option>
+                        <option value="Flaquito">Flaquito</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="montoAdelanto">Monto del Adelanto ($)</label>
-                    <input type="number" step="0.01" min="0.01" id="montoAdelanto" value="10.00" required>
+                    <label for="tipoMovimiento">Tipo de movimiento</label>
+                    <select id="tipoMovimiento" required>
+                        <option value="adelanto">Adelanto de dinero (solicitado en la semana)</option>
+                        <option value="pago">Pago de jornal / semana (fin de semana)</option>
+                    </select>
                 </div>
 
-                <button type="submit" class="btn-primary">Guardar Adelanto</button>
+                <div class="form-group">
+                    <label for="concepto">Concepto (opcional)</label>
+                    <input type="text" id="concepto" placeholder="Ej. Jornal sábado, Semana completa...">
+                </div>
+
+                <div class="form-group">
+                    <label for="montoPersonal">Monto ($)</label>
+                    <input type="number" step="0.01" min="0.01" id="montoPersonal" placeholder="0.00" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="diaMovimiento">Fecha</label>
+                    <input type="date" id="diaMovimiento" required>
+                </div>
+
+                <button type="submit" class="btn-primary">Guardar Movimiento</button>
             </form>
+        </div>
+
+        <div class="card card-wide">
+            <h3>📋 Historial de Movimientos</h3>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Trabajador</th>
+                            <th>Tipo</th>
+                            <th>Concepto</th>
+                            <th>Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaMovimientos">
+                        <tr><td colspan="5" class="empty-cell">Cargando historial...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card card-wide">
+            <h3>📊 Reportes de Empleados</h3>
+            <p class="report-desc">Filtra los adelantos y pagos de cada trabajador en un rango de fechas. Total a Pagar = Salario Total − Adelantos.</p>
+
+            <div class="report-filters">
+                <div class="form-group">
+                    <label for="reportTrabajador">Trabajador</label>
+                    <select id="reportTrabajador">
+                        <option value="todos">Todos los empleados</option>
+                        <option value="Patucho">Patucho</option>
+                        <option value="Lucho">Lucho</option>
+                        <option value="Flaquito">Flaquito</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="reportInicio">Desde</label>
+                    <input type="date" id="reportInicio">
+                </div>
+
+                <div class="form-group">
+                    <label for="reportFin">Hasta</label>
+                    <input type="date" id="reportFin">
+                </div>
+
+                <div class="report-actions">
+                    <button type="button" id="btnFiltrarReporte" class="btn-primary">🔍 Consultar</button>
+                    <button type="button" id="btnImprimirReporte" class="btn-secondary">🖨️ Imprimir</button>
+                </div>
+            </div>
+
+            <div class="report-totals" id="reporteTotales"></div>
+
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Trabajador</th>
+                            <th>Tipo</th>
+                            <th>Concepto</th>
+                            <th>Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaReporte">
+                        <tr><td colspan="5" class="empty-cell">Elige un trabajador y rango de fechas para consultar.</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
 

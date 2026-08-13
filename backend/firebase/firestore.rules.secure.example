@@ -36,7 +36,17 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    match /inventario/{document} {
+      allow read, create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
     match /adelantos/{document} {
+      allow read, create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    match /pagos_personal/{document} {
       allow read, create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
