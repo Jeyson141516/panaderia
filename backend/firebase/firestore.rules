@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ============================================================
+    // ¡IMPORTANTE! Estas reglas permiten lectura y escritura total
+    // SIN autenticación. CUALQUIER persona con el projectId puede
+    // leer, modificar o eliminar TODOS tus datos.
+    //
+    // La app aún no tiene sistema de login (Firebase Auth).
+    // Mientras tanto se usan reglas abiertas para que funcione,
+    // pero NO las uses en producción.
+    //
+    // Consulta firestore.rules.secure.example para la versión
+    // segura recomendada antes de publicar.
+    // ============================================================
+    match /{document=**} {
+      allow read, write: if true; // ⚠️ TEMPORAL — restringir antes de producción
+    }
+  }
+}

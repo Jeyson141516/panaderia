@@ -1,0 +1,13 @@
+.aider*
+
+# Dependencias
+node_modules/
+
+# Documentos locales
+*.docx
+*.doc
+
+# Archivos temporales
+*.log
+.DS_Store
+Thumbs.db

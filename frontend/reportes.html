@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panadería - Reportes y Estadísticas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/auth.js"></script>
+</head>
+<body>
+    <nav>
+        <div class="brand">
+            <span class="logo">🥖</span>
+            <h2>Panadería Familiar<small>Gestión de ventas</small></h2>
+        </div>
+        <ul>
+            <li><a href="index.html"><span class="nav-icon">💰</span> Ventas</a></li>
+            <li><a href="inventario.html"><span class="nav-icon">📦</span> Inventario y Gastos</a></li>
+            <li><a href="personal.html"><span class="nav-icon">👥</span> Personal y Adelantos</a></li>
+            <li><a href="reportes.html" class="active"><span class="nav-icon">📊</span> Reportes</a></li>
+            <li><a href="limpiar-db.html" class="danger-link"><span class="nav-icon">🗑️</span> Limpiar BD</a></li>
+        </ul>
+        <div class="nav-footer">
+            <span class="nav-user">👤 <span id="navUsuario">steven_admin</span></span>
+            <button id="btnLogout" class="btn-logout">⏻ Cerrar sesión</button>
+        </div>
+    </nav>
+
+    <main>
+        <header>
+            <h1>Reporte de Ventas y Cobranzas</h1>
+            <p>Resumen financiero, ventas de contado y cuentas por cobrar (fiadas).</p>
+        </header>
+
+        <div class="filtros-container">
+            <div class="filtro-group">
+                <label for="fechaInicio">Fecha de inicio</label>
+                <input type="date" id="fechaInicio">
+            </div>
+            <div class="filtro-group">
+                <label for="fechaFin">Fecha de fin</label>
+                <input type="date" id="fechaFin">
+            </div>
+            <div class="filtro-group">
+                <label for="estadoFiltro">Estado</label>
+                <select id="estadoFiltro">
+                    <option value="todos">Todos</option>
+                    <option value="pagado">Pagado (Contado)</option>
+                    <option value="debe">Por Cobrar (Fiado)</option>
+                </select>
+            </div>
+            <div class="filtro-actions">
+                <button id="btnConsultar" class="btn-accion">🔍 Consultar</button>
+                <button id="btnPdf" class="btn-accion success">📥 Descargar PDF</button>
+            </div>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card success">
+                <h4>Ventas de Contado</h4>
+                <span id="lblContado" style="color: var(--success);">$0.00</span>
+            </div>
+            <div class="metric-card warning">
+                <h4>Ventas a Crédito (Fiado)</h4>
+                <span id="lblCredito" style="color: var(--warning);">$0.00</span>
+            </div>
+            <div class="metric-card danger">
+                <h4>Total Pendiente de Cobro</h4>
+                <span id="lblPendiente" style="color: var(--danger);">$0.00</span>
+            </div>
+            <div class="metric-card info">
+                <h4>Total Facturado</h4>
+                <span id="lblTotal" style="color: var(--info);">$0.00</span>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-box">
+                <h3>📊 Resumen por Estado de Pago</h3>
+                <p class="empty-state" id="infoGrafico1">Realiza una consulta para ver el desglose.</p>
+            </div>
+            <div class="chart-box">
+                <h3>🏆 Mejores Clientes (Cantidad de Fundas)</h3>
+                <div id="listaMejoresClientes">
+                    <p class="empty-state">Sin datos en el rango seleccionado.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <script type="module" src="js/reportes.js"></script>
+</body>
+</html>

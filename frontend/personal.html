@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panadería - Personal y Adelantos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/auth.js"></script>
+</head>
+<body>
+    <nav>
+        <div class="brand">
+            <span class="logo">🥖</span>
+            <h2>Panadería Familiar<small>Gestión de ventas</small></h2>
+        </div>
+        <ul>
+            <li><a href="index.html"><span class="nav-icon">💰</span> Ventas</a></li>
+            <li><a href="inventario.html"><span class="nav-icon">📦</span> Inventario y Gastos</a></li>
+            <li><a href="personal.html" class="active"><span class="nav-icon">👥</span> Personal y Adelantos</a></li>
+            <li><a href="reportes.html"><span class="nav-icon">📊</span> Reportes</a></li>
+            <li><a href="limpiar-db.html" class="danger-link"><span class="nav-icon">🗑️</span> Limpiar BD</a></li>
+        </ul>
+        <div class="nav-footer">
+            <span class="nav-user">👤 <span id="navUsuario">steven_admin</span></span>
+            <button id="btnLogout" class="btn-logout">⏻ Cerrar sesión</button>
+        </div>
+    </nav>
+
+    <main>
+        <header>
+            <h1>Gestión de Personal y Adelantos</h1>
+            <p>Registra los adelantos de sueldo de los trabajadores.</p>
+        </header>
+
+        <div class="card">
+            <h3>Registrar Adelanto (Ej. $10)</h3>
+            <form id="formAdelanto">
+                <div class="form-group">
+                    <label for="trabajador">Seleccionar Trabajador</label>
+                    <select id="trabajador" required>
+                        <option value="Trabajador 1 (Lun-Vie)">Trabajador 1 (Lun-Vie)</option>
+                        <option value="Trabajador 2 (Lun-Vie)">Trabajador 2 (Lun-Vie)</option>
+                        <option value="Trabajador 3 (Comodín Fines de Semana)">Trabajador 3 (Comodín Fines de Semana)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="montoAdelanto">Monto del Adelanto ($)</label>
+                    <input type="number" step="0.01" min="0.01" id="montoAdelanto" value="10.00" required>
+                </div>
+
+                <button type="submit" class="btn-primary">Guardar Adelanto</button>
+            </form>
+        </div>
+    </main>
+
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <script type="module" src="js/personal.js"></script>
+</body>
+</html>
