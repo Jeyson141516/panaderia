@@ -8,10 +8,23 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('panaderia-tema');
+                if (t !== 'claro' && t !== 'oscuro') {
+                    t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro';
+                }
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) {}
+        })();
+    </script>
     <script type="module" src="js/auth.js"></script>
 </head>
 <body class="login-page">
     <div class="auth-loader"><div class="spinner"></div></div>
+
+    <button type="button" class="theme-toggle theme-toggle--float" aria-label="Cambiar de tema" title="Cambiar de tema"><span class="toggle-icon" aria-hidden="true">🌙</span></button>
 
     <main class="login-main">
         <div class="login-card glass">

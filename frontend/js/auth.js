@@ -9,6 +9,7 @@
    ============================================================ */
 import { auth } from './firebase-config.js';
 import { iniciarControlInactividad, detenerControlInactividad } from './session.js';
+import { inicializarTema, vincularBotones } from './theme.js';
 import {
     signInWithEmailAndPassword,
     signOut,
@@ -16,6 +17,11 @@ import {
     setPersistence,
     browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+// Sistema de temas (claro/oscuro): aplica la preferencia guardada y
+// activa los botones de alternancia de todas las páginas.
+inicializarTema();
+vincularBotones();
 
 // Persistencia automática de sesión (localStorage del navegador)
 setPersistence(auth, browserLocalPersistence).catch((error) => {

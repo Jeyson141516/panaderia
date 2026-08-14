@@ -236,6 +236,61 @@ nav .nav-user {
     color: #fecaca;
 }
 
+/* ============ Alternancia de tema (Claro / Oscuro) ============ */
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, .14);
+    background: rgba(255, 255, 255, .08);
+    color: #f3f4f6;
+    font-size: 1.05rem;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+
+.theme-toggle:hover {
+    background: rgba(255, 255, 255, .16);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle .toggle-icon {
+    pointer-events: none;
+    font-size: 1.05rem;
+}
+
+nav .brand .theme-toggle {
+    margin-left: auto;
+}
+
+/* Variante flotante (página de login) */
+.theme-toggle--float {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 300;
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    color: var(--text);
+    box-shadow: var(--shadow-md);
+}
+
+.theme-toggle--float:hover {
+    background: var(--glass-bg);
+    box-shadow: var(--shadow-lg);
+}
+
 /* ============ Contenido Principal ============ */
 main {
     flex: 1;
@@ -1316,4 +1371,153 @@ nav, main {
     .filtro-group {
         min-width: 100%;
     }
+}
+
+/* ============================================================
+   MODO OSCURO
+   ------------------------------------------------------------
+   Se activa con <html data-theme="oscuro"> (gestionado por
+   js/theme.js). El modo claro es el esquema por defecto de :root.
+   ============================================================ */
+:root[data-theme="oscuro"] {
+    --bg-1: #0f1118;
+    --bg-2: #15111c;
+    --bg-3: #0e1614;
+
+    --glass-bg: rgba(24, 27, 39, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.09);
+
+    --surface: #1a1e2c;
+    --surface-soft: #232839;
+
+    --text: #e7e9f2;
+    --text-muted: #9aa3b8;
+    --border: rgba(139, 92, 246, 0.24);
+
+    --shadow-sm: 0 4px 14px rgba(0, 0, 0, .4);
+    --shadow-md: 0 10px 28px rgba(0, 0, 0, .5);
+    --shadow-lg: 0 24px 64px rgba(0, 0, 0, .6);
+}
+
+:root[data-theme="oscuro"] body::before {
+    background: radial-gradient(circle, rgba(139, 92, 246, .16), transparent 70%);
+}
+
+:root[data-theme="oscuro"] body::after {
+    background: radial-gradient(circle, rgba(99, 102, 241, .14), transparent 70%);
+}
+
+/* Resaltado superior de las superficies de cristal: más tenue en oscuro */
+:root[data-theme="oscuro"] .glass,
+:root[data-theme="oscuro"] .card,
+:root[data-theme="oscuro"] .metric-card,
+:root[data-theme="oscuro"] .chart-box,
+:root[data-theme="oscuro"] .filtros-container,
+:root[data-theme="oscuro"] .summary-card,
+:root[data-theme="oscuro"] .report-card {
+    box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+
+:root[data-theme="oscuro"] .card:hover,
+:root[data-theme="oscuro"] .metric-card:hover,
+:root[data-theme="oscuro"] .summary-card:hover {
+    box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+
+/* Campos de formulario */
+:root[data-theme="oscuro"] .form-group input,
+:root[data-theme="oscuro"] .form-group select,
+:root[data-theme="oscuro"] .form-group textarea,
+:root[data-theme="oscuro"] input[type="text"],
+:root[data-theme="oscuro"] input[type="number"],
+:root[data-theme="oscuro"] input[type="password"],
+:root[data-theme="oscuro"] input[type="date"],
+:root[data-theme="oscuro"] select {
+    background: rgba(26, 30, 44, 0.82);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+:root[data-theme="oscuro"] .form-group input:focus,
+:root[data-theme="oscuro"] .form-group select:focus,
+:root[data-theme="oscuro"] .form-group textarea:focus,
+:root[data-theme="oscuro"] input:focus,
+:root[data-theme="oscuro"] select:focus {
+    background: rgba(32, 37, 54, 0.95);
+}
+
+:root[data-theme="oscuro"] option {
+    background: var(--surface);
+    color: var(--text);
+}
+
+/* Botón secundario */
+:root[data-theme="oscuro"] .btn-secondary {
+    background: rgba(255, 255, 255, .06);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+:root[data-theme="oscuro"] .btn-secondary:hover {
+    background: rgba(255, 255, 255, .12);
+}
+
+/* Caja de total */
+:root[data-theme="oscuro"] .total-box {
+    background: linear-gradient(135deg, rgba(30, 41, 66, .9), rgba(41, 33, 68, .9));
+}
+
+/* Tablas */
+:root[data-theme="oscuro"] .data-table tbody tr:hover {
+    background: rgba(255, 255, 255, .045);
+}
+
+/* Columnas de ventas del día */
+:root[data-theme="oscuro"] .ventas-col {
+    background: rgba(255, 255, 255, 0.035);
+}
+
+:root[data-theme="oscuro"] .ventas-col-title.pagado {
+    color: #4ade80;
+}
+
+:root[data-theme="oscuro"] .ventas-col-title.pendiente {
+    color: #fbbf24;
+}
+
+/* Lista de sugerencias (autocompletado) */
+:root[data-theme="oscuro"] .suggestion-list {
+    background: rgba(26, 30, 44, 0.97);
+    border-color: rgba(139, 92, 246, 0.32);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, .55), 0 4px 12px rgba(0, 0, 0, .3);
+}
+
+/* Saldo en tiempo real */
+:root[data-theme="oscuro"] .saldo-info {
+    background: rgba(255, 255, 255, 0.045);
+    border-color: var(--border);
+}
+
+/* Modales */
+:root[data-theme="oscuro"] .modal-card {
+    background: rgba(27, 31, 45, 0.96);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Badges y etiquetas de estado */
+:root[data-theme="oscuro"] .badge.adelanto {
+    color: #fbbf24;
+}
+
+:root[data-theme="oscuro"] .badge.pago {
+    color: #4ade80;
+}
+
+:root[data-theme="oscuro"] .abono-row td {
+    background: rgba(99, 102, 241, .12);
+}
+
+/* Errores de login: rojo más claro sobre fondo oscuro */
+:root[data-theme="oscuro"] .login-error {
+    color: #fca5a5;
 }
