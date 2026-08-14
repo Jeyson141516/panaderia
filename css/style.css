@@ -844,6 +844,65 @@ input[type="submit"]:disabled:hover {
     margin: 0;
 }
 
+/* Contador en tiempo real del total cobrado (solo Contado) */
+.total-dia-contado {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+    padding: 16px 22px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, rgba(34, 197, 94, .16), rgba(16, 185, 129, .08));
+    border: 1px solid rgba(34, 197, 94, .34);
+    box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+
+.total-dia-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text);
+}
+
+.total-dia-sub {
+    display: block;
+    font-size: 0.74rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    color: var(--text-muted);
+    margin-top: 3px;
+}
+
+.total-dia-monto {
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--success);
+    text-shadow: 0 0 24px rgba(34, 197, 94, .35);
+    white-space: nowrap;
+}
+
+/* Refuerzo del acabado oscuro en modo oscuro */
+:root[data-theme="oscuro"] .total-dia-contado {
+    background: linear-gradient(135deg, rgba(34, 197, 94, .15), rgba(16, 185, 129, .05));
+    border-color: rgba(34, 197, 94, .3);
+}
+
+@media (max-width: 576px) {
+    .total-dia-contado {
+        padding: 14px 16px;
+    }
+
+    .total-dia-monto {
+        font-size: 1.55rem;
+    }
+}
+
 .fecha-dia-input {
     max-width: 180px;
     flex-shrink: 0;

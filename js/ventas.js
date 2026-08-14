@@ -32,6 +32,7 @@ const tablaVentasPagado = document.getElementById('tablaVentasPagado');
 const tablaVentasDebe = document.getElementById('tablaVentasDebe');
 const buscadorVentasDia = document.getElementById('buscadorVentasDia');
 const fechaFiltroDia = document.getElementById('fechaFiltroDia');
+const totalDiaContado = document.getElementById('totalDiaContado');
 const ventasDiaCache = [];
 let saldosMap = {};
 let saldosNormMap = {};
@@ -152,6 +153,29 @@ function aplicarFiltroBuscadorVentas() {
             tbody.appendChild(tr);
         }
     });
+
+    actualizarContadorDia();
+}
+
+/**
+ * Contador en tiempo real del total cobrado.
+ * Suma SOLO las ventas de contado (estado 'pagado'); excluye por completo
+ * fiados ('debe') y abonos ('abono'). Respeta el buscador activo: si el
+ * usuario filtra, el total refleja las ventas pagadas visibles.
+ */
+function actualizarContadorDia() {
+    const termino = normalizarTexto(buscadorVentasDia.value);
+    let total = 0;
+
+    ventasDiaCache.forEach((v) => {
+        if (v.estado !== 'pagado') return;
+        if (termino && !normalizarTexto(v.cliente).includes(termino)) return;
+        total += v.total;
+    });
+
+    if (totalDiaContado) {
+        totalDiaContado.textContent = formatearMoneda(total);
+    }
 }
 
 buscadorVentasDia.addEventListener('input', aplicarFiltroBuscadorVentas);

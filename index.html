@@ -107,6 +107,13 @@
                 <h3 id="ventasDiaTitulo">🕐 Ventas del Día</h3>
                 <input type="date" id="fechaFiltroDia" class="fecha-dia-input" aria-label="Filtrar ventas del día por fecha" title="Elige el día a consultar">
             </div>
+            <div class="total-dia-contado" role="status" aria-live="polite">
+                <div class="total-dia-info">
+                    <span class="total-dia-label">💰 Total Cobrado (Contado)</span>
+                    <small class="total-dia-sub">Solo clientes que pagaron · se actualiza al buscar</small>
+                </div>
+                <span class="total-dia-monto" id="totalDiaContado">$0.00</span>
+            </div>
             <div class="form-group ventas-search">
                 <input type="text" id="buscadorVentasDia" placeholder="🔍 Buscar cliente en las ventas del día..." autocomplete="off">
             </div>
