@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panadería - Inventario y Gastos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('panaderia-tema');
+                if (t !== 'claro' && t !== 'oscuro') {
+                    t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro';
+                }
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) {}
+        })();
+    </script>
+    <script type="module" src="js/auth.js"></script>
+</head>
+<body>
+    <div class="auth-loader"><div class="spinner"></div></div>
+
+    <nav>
+        <div class="brand">
+            <span class="logo">🥖</span>
+            <h2>Panadería Familiar<small>Gestión de ventas</small></h2>
+            <button type="button" class="theme-toggle" aria-label="Cambiar de tema" title="Cambiar de tema"><span class="toggle-icon" aria-hidden="true">🌙</span></button>
+        </div>
+        <ul>
+            <li><a href="index.html"><span class="nav-icon">💰</span> Ventas</a></li>
+            <li><a href="inventario.html" class="active"><span class="nav-icon">📦</span> Inventario y Gastos</a></li>
+            <li><a href="personal.html"><span class="nav-icon">👥</span> Personal y Adelantos</a></li>
+            <li><a href="reportes.html"><span class="nav-icon">📊</span> Reportes</a></li>
+        </ul>
+        <div class="nav-footer">
+            <span class="nav-user">👤 <span id="navUsuario">…</span></span>
+            <button id="btnLogout" class="btn-logout">⏻ Cerrar sesión</button>
+        </div>
+    </nav>
+
+    <main>
+        <header>
+            <h1>Inventario y Gastos</h1>
+            <p>Registra gastos de producción y administra los productos e insumos del negocio.</p>
+            <button type="button" id="btnVerInventario" class="btn-accion">📦 Ver Inventario y Productos</button>
+        </header>
+
+        <div class="card">
+            <h3>💸 Registrar Gasto de Producción</h3>
+            <form id="formGasto">
+                <div class="form-group search-wrap">
+                    <label for="productoBusqueda">Producto / Ingrediente</label>
+                    <div class="search-row">
+                        <input type="text" id="productoBusqueda" placeholder="Buscar o escribir producto (ej. harina)..." autocomplete="off">
+                        <button type="button" id="btnNuevoProducto" class="btn-secondary">+ Nuevo</button>
+                    </div>
+                    <ul id="listaSugerenciasProducto" class="suggestion-list"></ul>
+                </div>
+
+                <div class="form-group">
+                    <label for="monto">Monto del gasto ($)</label>
+                    <input type="number" step="0.01" min="0.01" id="monto" required placeholder="0.00">
+                </div>
+
+                <button type="submit" class="btn-primary">＋ Añadir Gasto</button>
+            </form>
+        </div>
+
+        <div class="card card-wide">
+            <h3>🧾 Historial de Gastos Realizados</h3>
+            <div class="gastos-filtros">
+                <input type="text" id="busquedaGasto" class="inventory-search" placeholder="🔍 Buscar por producto o concepto...">
+                <input type="date" id="fechaFiltroGasto" class="fecha-dia-input" title="Filtrar por un día específico (vacío = todos)">
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Producto / Concepto</th>
+                            <th>Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaGastos">
+                        <tr><td colspan="3" class="empty-cell">Cargando gastos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="modalInventario" class="modal">
+        <div class="modal-card modal-card--wide">
+            <div class="modal-header">
+                <h3>📦 Inventario y Productos</h3>
+                <button type="button" id="cerrarModalInventario" class="modal-close" aria-label="Cerrar inventario" title="Cerrar">✕</button>
+            </div>
+            <input type="text" id="busquedaInventario" class="inventory-search" placeholder="🔍 Buscar en la lista...">
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaInventario">
+                        <tr><td colspan="2" class="empty-cell">Cargando inventario...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalProducto" class="modal">
+        <div class="modal-card">
+            <h3>Registrar Nuevo Producto</h3>
+            <div class="form-group">
+                <label for="nuevoNombreProducto">Nombre del producto / ingrediente</label>
+                <input type="text" id="nuevoNombreProducto" placeholder="Ej. Harina, Azúcar, Manteca">
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="guardarProductoModal" class="btn-success">Guardar</button>
+                <button type="button" id="cerrarModalProducto" class="btn-danger">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <script type="module" src="js/inventario.js"></script>
+</body>
+</html>

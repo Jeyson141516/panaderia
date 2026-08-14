@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panadería - Registro de Ventas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('panaderia-tema');
+                if (t !== 'claro' && t !== 'oscuro') {
+                    t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro';
+                }
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) {}
+        })();
+    </script>
+    <script type="module" src="js/auth.js"></script>
+</head>
+<body>
+    <div class="auth-loader"><div class="spinner"></div></div>
+
+    <nav>
+        <div class="brand">
+            <span class="logo">🥖</span>
+            <h2>Panadería Familiar<small>Gestión de ventas</small></h2>
+            <button type="button" class="theme-toggle" aria-label="Cambiar de tema" title="Cambiar de tema"><span class="toggle-icon" aria-hidden="true">🌙</span></button>
+        </div>
+        <ul>
+            <li><a href="index.html" class="active"><span class="nav-icon">💰</span> Ventas</a></li>
+            <li><a href="inventario.html"><span class="nav-icon">📦</span> Inventario y Gastos</a></li>
+            <li><a href="personal.html"><span class="nav-icon">👥</span> Personal y Adelantos</a></li>
+            <li><a href="reportes.html"><span class="nav-icon">📊</span> Reportes</a></li>
+        </ul>
+        <div class="nav-footer">
+            <span class="nav-user">👤 <span id="navUsuario">…</span></span>
+            <button id="btnLogout" class="btn-logout">⏻ Cerrar sesión</button>
+        </div>
+    </nav>
+
+    <main>
+        <header>
+            <h1>Registrar Venta de Pan</h1>
+            <p>Cada funda cuesta $1.00</p>
+        </header>
+
+        <section class="card">
+            <form id="formVenta">
+                <div class="form-group search-wrap">
+                    <label for="clienteBusqueda">Cliente</label>
+                    <div class="search-row">
+                        <input type="text" id="clienteBusqueda" placeholder="Buscar cliente por nombre..." autocomplete="off">
+                        <button type="button" id="btnAbrirModal" class="btn-secondary">+ Nuevo</button>
+                    </div>
+                    <ul id="listaSugerencias" class="suggestion-list"></ul>
+                    <div id="clienteSaldoInfo" class="saldo-info hidden">
+                        <span id="clienteSaldoText" class="saldo-info-text"></span>
+                        <button type="button" id="btnAbonoSaldo" class="btn-accion btn-abonar">Registrar abono de este saldo</button>
+                    </div>
+                </div>
+
+                <div class="form-group" id="grupoCantidad">
+                    <label for="cantidad">Cantidad de Fundas</label>
+                    <input type="number" id="cantidad" min="1" value="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="estadoPago">Tipo de Transacción</label>
+                    <select id="estadoPago">
+                        <option value="pagado">Pagado (Contado)</option>
+                        <option value="debe">Fiado (Pendiente)</option>
+                        <option value="abono">Abono / Pago de Deuda</option>
+                    </select>
+                </div>
+
+                <div class="form-group hidden" id="grupoAbono">
+                    <label for="montoAbono">Monto del Abono ($)</label>
+                    <input type="number" id="montoAbono" min="0.01" step="0.01" placeholder="0.00">
+                </div>
+
+                <div class="form-group">
+                    <label for="fechaVenta">Fecha de la Venta</label>
+                    <select id="fechaVenta">
+                        <option value="0">Hoy</option>
+                        <option value="-1">Ayer</option>
+                        <option value="-2">Antes de ayer</option>
+                    </select>
+                </div>
+
+                <div class="total-box">
+                    <h3><span id="totalLabel">Total a Pagar</span>: $<span id="totalPagar">1.00</span></h3>
+                </div>
+
+                <button type="submit" class="btn-primary">Registrar Venta</button>
+            </form>
+        </section>
+
+        <div id="ventas-dia-container" class="card card-wide">
+            <div class="ventas-dia-header">
+                <h3 id="ventasDiaTitulo">🕐 Ventas del Día</h3>
+                <input type="date" id="fechaFiltroDia" class="fecha-dia-input" aria-label="Filtrar ventas del día por fecha" title="Elige el día a consultar">
+            </div>
+            <div class="form-group ventas-search">
+                <input type="text" id="buscadorVentasDia" placeholder="🔍 Buscar cliente en las ventas del día..." autocomplete="off">
+            </div>
+            <div class="ventas-grid">
+                <div class="ventas-col">
+                    <h4 class="ventas-col-title pagado">Clientes que han Pagado (Contado)</h4>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Cantidad</th>
+                                    <th>Total</th>
+                                    <th>Hora</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaVentasPagado">
+                                <tr><td colspan="4" class="empty-cell">Cargando ventas de hoy...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="ventas-col">
+                    <h4 class="ventas-col-title pendiente">Clientes que Deben (Fiado / Pendiente)</h4>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Saldo Pendiente</th>
+                                    <th>Última Hora</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaVentasDebe">
+                                <tr><td colspan="4" class="empty-cell">Cargando ventas de hoy...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="modalCliente" class="modal">
+        <div class="modal-card">
+            <h3>Registrar Nuevo Cliente</h3>
+            <div class="form-group">
+                <label for="nuevoNombre">Nombre y Apellido</label>
+                <input type="text" id="nuevoNombre" placeholder="Ej. Juan Pérez">
+            </div>
+            <div class="form-group">
+                <label for="nuevoTelefono">Teléfono (Opcional)</label>
+                <input type="text" id="nuevoTelefono" placeholder="Ej. 0991234567">
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="guardarClienteModal" class="btn-success">Guardar</button>
+                <button type="button" id="cerrarModal" class="btn-danger">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <script type="module" src="js/ventas.js"></script>
+</body>
+</html>
