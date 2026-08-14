@@ -16,6 +16,7 @@ const lblResVentas = document.getElementById('lblResVentas');
 const lblResGastos = document.getElementById('lblResGastos');
 const lblResPersonal = document.getElementById('lblResPersonal');
 const lblResPersonalDetalle = document.getElementById('lblResPersonalDetalle');
+const lblResAdelantos = document.getElementById('lblResAdelantos');
 const lblResUtilidad = document.getElementById('lblResUtilidad');
 
 const btnCsv = document.getElementById('btnCsv');
@@ -160,7 +161,10 @@ async function cargarReporte() {
 
         const pagosTrabajadores = construirPagosTrabajadores(adelantosSnap, pagosSnap);
         const totalAPagar = totalPagosPersonal - totalAdelantos;
-        const utilidadNeta = totalVentas - totalGastos - totalAPagar;
+        // Utilidad Neta = Ventas Totales - Gastos (Insumos) - Total Adelantos Entregados.
+        // Los adelantos son una SALIDA DE EFECTIVO REAL del negocio: se descuentan de
+        // inmediato de las ventas, sin importar si el salario base está liquidado o es $0.00.
+        const utilidadNeta = totalVentas - totalGastos - totalAdelantos;
 
         const totalFacturado = totalContado + totalCredito;
         const totalPendiente = Math.max(0, totalCredito - totalAbonos);
@@ -190,6 +194,7 @@ async function cargarReporte() {
         lblResGastos.textContent = formatearMoneda(totalGastos);
         lblResPersonal.textContent = formatearMoneda(totalAPagar);
         lblResPersonalDetalle.textContent = `Salario Total: ${formatearMoneda(totalPagosPersonal)} · Adelantos: ${formatearMoneda(totalAdelantos)}`;
+        lblResAdelantos.textContent = formatearMoneda(totalAdelantos);
         lblResUtilidad.textContent = formatearMoneda(utilidadNeta);
         lblResUtilidad.style.color = utilidadNeta >= 0 ? "var(--success)" : "var(--danger)";
 
@@ -356,11 +361,13 @@ function abrirVentanaImpresion() {
             <div class="grid">
                 <div class="box"><span class="lbl">Ventas (Ingresos)</span><b>${formatearMoneda(r.totalVentas)}</b></div>
                 <div class="box"><span class="lbl">Gastos (Insumos)</span><b>${formatearMoneda(r.totalGastos)}</b></div>
+                <div class="box"><span class="lbl">Adelantos (Salida de Caja)</span><b>${formatearMoneda(r.totalAdelantos)}</b></div>
                 <div class="box"><span class="lbl">Total a Pagar a Personal</span><b>${formatearMoneda(r.totalAPagar)}</b></div>
                 <div class="box ${r.utilidadNeta >= 0 ? 'utilidad' : 'utilidad negativa'}"><span class="lbl">Utilidad Neta</span><b>${formatearMoneda(r.utilidadNeta)}</b></div>
             </div>
             <p style="margin-top: 12px; color: #6b7280; font-size: 13px;">
-                Detalle Personal — Salario Total: <b>${formatearMoneda(r.totalPagosPersonal)}</b> · Adelantos: <b>${formatearMoneda(r.totalAdelantos)}</b>
+                Utilidad = Ventas Totales − Gastos (Insumos) − Total Adelantos Entregados<br>
+                Detalle Personal — Salario Total: <b>${formatearMoneda(r.totalPagosPersonal)}</b> · Adelantos (salida de efectivo real): <b>${formatearMoneda(r.totalAdelantos)}</b>
             </p>
             <h2 style="font-size:16px;margin-top:28px;">👥 Pagos por Trabajador (Total a Pagar = Salario − Adelantos)</h2>
             <table>
