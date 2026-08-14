@@ -13,6 +13,7 @@
     --bg-1: #eef1ff;
     --bg-2: #f6f0ff;
     --bg-3: #e8f7f0;
+    --page-bg: #eef1ff;
 
     --glass-bg: rgba(255, 255, 255, 0.62);
     --glass-border: rgba(255, 255, 255, 0.6);
@@ -45,12 +46,16 @@
 
 html {
     -webkit-text-size-adjust: 100%;
+    overscroll-behavior-y: none;
+    background-color: var(--page-bg);
 }
 
 /* ============ Fondo con orbes decorativos ============ */
 body {
     background: linear-gradient(120deg, var(--bg-1) 0%, var(--bg-2) 48%, var(--bg-3) 100%);
     background-attachment: fixed;
+    background-color: var(--page-bg);
+    overscroll-behavior-y: none;
     color: var(--text);
     display: flex;
     min-height: 100vh;
@@ -285,6 +290,8 @@ main {
     flex: 1;
     padding: 36px 40px 60px;
     min-width: 0;
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 header {
@@ -1310,6 +1317,8 @@ input[type="submit"]:disabled:hover {
     display: grid;
     place-items: center;
     padding: 20px;
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 .login-card {
@@ -1750,6 +1759,7 @@ nav, main {
     --bg-1: #0f1118;
     --bg-2: #15111c;
     --bg-3: #0e1614;
+    --page-bg: #0f1118;
 
     --glass-bg: rgba(24, 27, 39, 0.72);
     --glass-border: rgba(255, 255, 255, 0.09);
