@@ -11,3 +11,17 @@ node_modules/
 *.log
 .DS_Store
 Thumbs.db
+
+# Firebase / despliegue
+.firebase/
+firebase-debug.log
+firestore.rules.backup
+
+# Secretos y variables de entorno
+.env
+.env.*
+!.env.example
+
+# Configuración generada (contiene datos de .env)
+frontend/js/config.js
+backend/functions/.env

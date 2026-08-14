@@ -1,7 +1,7 @@
 import { db } from './firebase-config.js';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
-import { normalizarTexto } from './utils.js';
+import { normalizarTexto, limpiarTexto, validarMonto } from './utils.js';
 
 const formGasto = document.getElementById('formGasto');
 const tablaGastos = document.getElementById('tablaGastos');
@@ -53,9 +53,9 @@ formGasto.addEventListener('submit', async (e) => {
         return;
     }
 
-    const monto = parseFloat(document.getElementById('monto').value);
+    const monto = validarMonto(document.getElementById('monto').value, 0.01, 1000000);
 
-    if (!Number.isFinite(monto) || monto <= 0) {
+    if (monto === null) {
         toast("Ingresa un monto válido mayor a 0.", "warning");
         return;
     }
@@ -177,7 +177,7 @@ function cerrarModalProductoHandler() {
 }
 
 guardarProductoModal.addEventListener('click', async () => {
-    const nombre = nuevoNombreProducto.value.trim();
+    const nombre = limpiarTexto(nuevoNombreProducto.value, 80);
 
     if (!nombre) {
         toast("Escribe el nombre del producto.", "warning");

@@ -1,7 +1,7 @@
 import { db } from './firebase-config.js';
 import { collection, addDoc, getDocs, serverTimestamp, query, where, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
-import { normalizarTexto } from './utils.js';
+import { normalizarTexto, limpiarTexto, validarEntero, validarMonto, validarTelefono } from './utils.js';
 
 const PRECIO_FUNDA = 1.00;
 
@@ -188,13 +188,13 @@ async function cargarVentasDelDia() {
 
 function actualizarTotalVenta() {
     const cantidad = parseInt(cantidadInput.value, 10);
-    const total = Number.isFinite(cantidad) && cantidad > 0 ? cantidad * PRECIO_FUNDA : 0;
+    const total = Number.isFinite(cantidad) && cantidad > 0 && cantidad <= 999 ? cantidad * PRECIO_FUNDA : 0;
     totalPagarSpan.textContent = total.toFixed(2);
 }
 
 function actualizarTotalAbono() {
-    const monto = parseFloat(montoAbonoInput.value);
-    totalPagarSpan.textContent = (Number.isFinite(monto) && monto > 0 ? monto : 0).toFixed(2);
+    const monto = validarMonto(montoAbonoInput.value);
+    totalPagarSpan.textContent = (monto !== null ? monto : 0).toFixed(2);
 }
 
 function actualizarFormularioAbono() {
@@ -425,8 +425,8 @@ function cerrarModalHandler() {
 }
 
 guardarClienteModal.addEventListener('click', async () => {
-    const nombre = nuevoNombreInput.value.trim();
-    const telefono = nuevoTelefonoInput.value.trim();
+    const nombre = limpiarTexto(nuevoNombreInput.value, 80);
+    const telefono = validarTelefono(nuevoTelefonoInput.value);
 
     if (!nombre) {
         toast("Por favor escribe el nombre del cliente.", "warning");
@@ -466,7 +466,7 @@ guardarClienteModal.addEventListener('click', async () => {
 formVenta.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const cliente = clienteBusqueda.value.trim();
+    const cliente = limpiarTexto(clienteBusqueda.value, 80);
     const estadoPago = estadoPagoSelect.value;
     const fechaVenta = new Date();
     fechaVenta.setDate(fechaVenta.getDate() + offsetDiasSeleccionado());
@@ -477,8 +477,8 @@ formVenta.addEventListener('submit', async (e) => {
                 toast("Selecciona el cliente que está abonando.", "warning");
                 return;
             }
-            const monto = parseFloat(montoAbonoInput.value);
-            if (!Number.isFinite(monto) || monto <= 0) {
+            const monto = validarMonto(montoAbonoInput.value, 0.01, 1000000);
+            if (monto === null) {
                 toast("Ingresa un monto de abono válido.", "warning");
                 return;
             }
@@ -494,9 +494,9 @@ formVenta.addEventListener('submit', async (e) => {
 
             toast("¡Abono registrado! Deuda actualizada.");
         } else {
-            const cantidad = parseInt(cantidadInput.value, 10);
-            if (!Number.isFinite(cantidad) || cantidad <= 0) {
-                toast("Ingresa una cantidad válida de fundas.", "warning");
+            const cantidad = validarEntero(cantidadInput.value, 1, 999);
+            if (cantidad === null) {
+                toast("Ingresa una cantidad válida de fundas (1 a 999).", "warning");
                 return;
             }
 

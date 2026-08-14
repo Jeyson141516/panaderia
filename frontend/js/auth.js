@@ -8,6 +8,7 @@
      revelar el contenido una vez conocido el estado real.
    ============================================================ */
 import { auth } from './firebase-config.js';
+import { iniciarControlInactividad, detenerControlInactividad } from './session.js';
 import {
     signInWithEmailAndPassword,
     signOut,
@@ -20,6 +21,37 @@ import {
 setPersistence(auth, browserLocalPersistence).catch((error) => {
     console.error("Error al configurar persistencia de sesión:", error);
 });
+
+/* ---------- Expiración por inactividad ---------- */
+
+// Elimina rastros de sesión del navegador (Firebase guarda en localStorage).
+function limpiarAlmacenamientoSesion() {
+    const clavesFirebase = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const clave = localStorage.key(i);
+        if (clave && clave.indexOf("firebase:") === 0) {
+            clavesFirebase.push(clave);
+        }
+    }
+    clavesFirebase.forEach((clave) => localStorage.removeItem(clave));
+    sessionStorage.clear();
+}
+
+// Se ejecuta cuando el usuario supera el tiempo de inactividad.
+async function expulsarPorInactividad() {
+    try {
+        await cerrarSesion();
+    } catch (error) {
+        console.error("Error al cerrar sesión por inactividad:", error);
+    }
+    limpiarAlmacenamientoSesion();
+    try {
+        sessionStorage.setItem("sesionExpirada", "1");
+    } catch (e) {
+        // ignore: puede fallar si storage no está disponible
+    }
+    window.location.replace("login.html?motivo=inactividad");
+}
 
 /* ---------- API de autenticación ---------- */
 
@@ -60,6 +92,7 @@ onAuthStateChanged(auth, (usuario) => {
     const pagina = obtenerNombrePagina();
 
     if (pagina === "login.html") {
+        detenerControlInactividad();
         if (usuario) {
             window.location.replace("index.html");
         } else {
@@ -71,11 +104,13 @@ onAuthStateChanged(auth, (usuario) => {
     // Cualquier otra página es protegida
     if (usuario) {
         revelarContenido();
+        iniciarControlInactividad(expulsarPorInactividad);
 
         const spanUsuario = document.getElementById("navUsuario");
         if (spanUsuario) spanUsuario.textContent = usuario.email || usuario.displayName || "usuario";
     } else {
         // Sin sesión: redirige al login de inmediato (bloquea el contenido)
+        detenerControlInactividad();
         window.location.replace("login.html");
     }
 });
@@ -84,6 +119,7 @@ onAuthStateChanged(auth, (usuario) => {
 const btnLogout = document.getElementById("btnLogout");
 if (btnLogout) {
     btnLogout.addEventListener("click", async () => {
+        detenerControlInactividad();
         try {
             await cerrarSesion();
         } finally {

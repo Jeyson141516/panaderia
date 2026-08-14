@@ -2,9 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // ============================================================
-    // EJEMPLO SEGURO — requiere Firebase Auth.
-    // Reemplaza "YOUR_PROJECT.firebaseapp.com" por tu dominio real.
-    // Esta versión NO debe desplegarse hasta que la app tenga login.
+    // REFERENCIA SEGURA — mismo contenido que firestore.rules.
+    // Este archivo sirve como plantilla; las reglas ACTIVAS viven
+    // en firestore.rules.
+    //
+    // Requiere Firebase Auth y valida tipos/límites de los campos.
+    // Reemplaza el email del array de "isAdmin" por el tuyo.
     // ============================================================
 
     function isSignedIn() {
@@ -12,46 +15,99 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn()
-        && request.auth.token.email in [
-          "tu-correo@example.com"
-        ];
+      return isSignedIn() && (
+        request.auth.token.admin == true ||
+        request.auth.token.email in ["cambia-por-tu-correo@example.com"]
+      );
+    }
+
+    function esTexto(valor, maxLongitud) {
+      return valor is string
+        && valor.size() > 0
+        && valor.size() <= maxLongitud;
+    }
+
+    function esMontoValido() {
+      return request.resource.data.monto is number
+        && request.resource.data.monto >= 0.01
+        && request.resource.data.monto <= 1000000;
+    }
+
+    function esFechaValida() {
+      return request.resource.data.fecha is timestamp;
     }
 
     match /ventas/{document} {
-      allow read, create: if isSignedIn();
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && esTexto(request.resource.data.cliente, 80)
+        && request.resource.data.cantidadFundas is number
+        && request.resource.data.cantidadFundas >= 0
+        && request.resource.data.cantidadFundas <= 999
+        && request.resource.data.totalVenta is number
+        && request.resource.data.totalVenta > 0
+        && request.resource.data.totalVenta <= 1000000
+        && request.resource.data.estadoPago in ["pagado", "debe", "abono"]
+        && esFechaValida();
+
       allow update, delete: if isAdmin();
     }
 
     match /clientes/{document} {
       allow read: if isSignedIn();
+
       allow create: if isSignedIn()
-                    && request.resource.data.nombre is string
-                    && request.resource.data.nombre.size() > 0;
+        && esTexto(request.resource.data.nombre, 80)
+        && esTexto(request.resource.data.nombreNorm, 80)
+        && (!('telefono' in request.resource.data) || (request.resource.data.telefono is string && request.resource.data.telefono.size() <= 20));
+
       allow update, delete: if isAdmin();
     }
 
     match /gastos_inventario/{document} {
-      allow read, create: if isSignedIn();
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && esTexto(request.resource.data.producto, 80)
+        && esTexto(request.resource.data.productoNorm, 80)
+        && esMontoValido()
+        && esFechaValida();
+
       allow update, delete: if isAdmin();
     }
 
     match /inventario/{document} {
-      allow read, create: if isSignedIn();
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && esTexto(request.resource.data.nombre, 80)
+        && esTexto(request.resource.data.nombreNorm, 80);
+
       allow update, delete: if isAdmin();
     }
 
+    function esMovimientoPersonalValido() {
+      return esTexto(request.resource.data.trabajador, 50)
+        && esTexto(request.resource.data.concepto, 120)
+        && esMontoValido()
+        && request.resource.data.dia is string
+        && request.resource.data.dia.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && esFechaValida();
+    }
+
     match /adelantos/{document} {
-      allow read, create: if isSignedIn();
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && esMovimientoPersonalValido();
       allow update, delete: if isAdmin();
     }
 
     match /pagos_personal/{document} {
-      allow read, create: if isSignedIn();
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && esMovimientoPersonalValido();
       allow update, delete: if isAdmin();
     }
 
-    // Por defecto, todo lo demás queda bloqueado
     match /{document=**} {
       allow read, write: if false;
     }

@@ -2,19 +2,125 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // ============================================================
-    // ¡IMPORTANTE! Estas reglas permiten lectura y escritura total
-    // SIN autenticación. CUALQUIER persona con el projectId puede
-    // leer, modificar o eliminar TODOS tus datos.
+    // REGLAS SEGURAS — requieren Firebase Auth en todas las lecturas
+    // y escrituras, y validan tipos/límites de los campos.
     //
-    // La app aún no tiene sistema de login (Firebase Auth).
-    // Mientras tanto se usan reglas abiertas para que funcione,
-    // pero NO las uses en producción.
+    // ANTES DE DESPLEGAR:
+    //   1) Reemplaza el email del array de "isAdmin" por el tuyo
+    //      (o asigna el custom claim admin == true desde una
+    //      Cloud Function / Admin SDK).
+    //   2) Activa App Check en la consola de Firebase.
     //
-    // Consulta firestore.rules.secure.example para la versión
-    // segura recomendada antes de publicar.
+    // Despliegue:  firebase deploy --only firestore:rules
     // ============================================================
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.admin == true ||
+        request.auth.token.email in ["jeysonstevenbeltranlainez@gmail.com"]
+      );
+    }
+
+    // --- Validaciones de datos ---
+    function esTexto(valor, maxLongitud) {
+      return valor is string
+        && valor.size() > 0
+        && valor.size() <= maxLongitud;
+    }
+
+    function esMontoValido() {
+      return request.resource.data.monto is number
+        && request.resource.data.monto >= 0.01
+        && request.resource.data.monto <= 1000000;
+    }
+
+    function esFechaValida() {
+      return request.resource.data.fecha is timestamp;
+    }
+
+    // --- Ventas (incluye abonos y fiados) ---
+    match /ventas/{document} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && esTexto(request.resource.data.cliente, 80)
+        && request.resource.data.cantidadFundas is number
+        && request.resource.data.cantidadFundas >= 0
+        && request.resource.data.cantidadFundas <= 999
+        && request.resource.data.totalVenta is number
+        && request.resource.data.totalVenta > 0
+        && request.resource.data.totalVenta <= 1000000
+        && request.resource.data.estadoPago in ["pagado", "debe", "abono"]
+        && esFechaValida();
+
+      allow update, delete: if isAdmin();
+    }
+
+    // --- Clientes ---
+    match /clientes/{document} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && esTexto(request.resource.data.nombre, 80)
+        && esTexto(request.resource.data.nombreNorm, 80)
+        && (!('telefono' in request.resource.data) || (request.resource.data.telefono is string && request.resource.data.telefono.size() <= 20));
+
+      allow update, delete: if isAdmin();
+    }
+
+    // --- Gastos de producción ---
+    match /gastos_inventario/{document} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && esTexto(request.resource.data.producto, 80)
+        && esTexto(request.resource.data.productoNorm, 80)
+        && esMontoValido()
+        && esFechaValida();
+
+      allow update, delete: if isAdmin();
+    }
+
+    // --- Inventario de productos ---
+    match /inventario/{document} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && esTexto(request.resource.data.nombre, 80)
+        && esTexto(request.resource.data.nombreNorm, 80);
+
+      allow update, delete: if isAdmin();
+    }
+
+    // --- Adelantos y pagos de personal ---
+    function esMovimientoPersonalValido() {
+      return esTexto(request.resource.data.trabajador, 50)
+        && esTexto(request.resource.data.concepto, 120)
+        && esMontoValido()
+        && request.resource.data.dia is string
+        && request.resource.data.dia.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && esFechaValida();
+    }
+
+    match /adelantos/{document} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && esMovimientoPersonalValido();
+      allow update, delete: if isAdmin();
+    }
+
+    match /pagos_personal/{document} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && esMovimientoPersonalValido();
+      allow update, delete: if isAdmin();
+    }
+
+    // Por defecto, todo lo demás queda bloqueado
     match /{document=**} {
-      allow read, write: if true; // ⚠️ TEMPORAL — restringir antes de producción
+      allow read, write: if false;
     }
   }
 }

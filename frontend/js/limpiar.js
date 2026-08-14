@@ -1,11 +1,11 @@
 import { db } from './firebase-config.js';
 import { collection, getDocs, deleteDoc, doc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast } from './ui.js';
+import { ADMIN_PIN } from './config.js';
 
 const btnLimpiar = document.getElementById('btnLimpiar');
 const estadoLimpieza = document.getElementById('estadoLimpieza');
 
-const ADMIN_PIN = "1234";
 const LOTE_MAX = 400;
 
 function establecerEstado(texto, color) {

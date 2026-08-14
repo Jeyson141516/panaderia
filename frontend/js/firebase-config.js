@@ -4,21 +4,16 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
+// La configuración se genera automáticamente a partir de .env con
+// "npm run config" (ver scripts/generate-config.js). El archivo
+// config.js NO se sube a git, por lo que aquí nunca hay claves en crudo.
+import { FIREBASE_CONFIG } from './config.js';
+
 // Configuración de Firebase.
 // NOTA: una API key de Firebase Web NO es un secreto (viaja en el cliente),
 // pero DEBES activar "App Check" y restringir la API key en la consola de
 // Google Cloud para evitar abusos (uso de cuota, lecturas/escrituras externas).
-const firebaseConfig = {
-    apiKey: "AIzaSyAXeVsuqLMEgzT2mmxCs4xgpiMHvjQxuiI",
-    authDomain: "panaderiaapp-fe8cf.firebaseapp.com",
-    projectId: "panaderiaapp-fe8cf",
-    storageBucket: "panaderiaapp-fe8cf.firebasestorage.app",
-    messagingSenderId: "878317994126",
-    appId: "1:878317994126:web:52f9937fbf21bc4eff09df",
-    measurementId: "G-0DGR0BB3ND"
-};
-
-const app = initializeApp(firebaseConfig);
+const app = initializeApp(FIREBASE_CONFIG);
 
 let analytics = null;
 try {

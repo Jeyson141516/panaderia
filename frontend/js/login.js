@@ -1,5 +1,6 @@
 import { toast } from './ui.js';
 import { iniciarSesion } from './auth.js';
+import { limpiarTexto, validarEmail } from './utils.js';
 
 const formLogin = document.getElementById('formLogin');
 const loginError = document.getElementById('loginError');
@@ -7,6 +8,12 @@ const loginError = document.getElementById('loginError');
 function mostrarError(mensaje) {
     loginError.textContent = mensaje;
     loginError.hidden = false;
+}
+
+// Aviso de sesión expirada por inactividad (marca establecida por auth.js)
+if (sessionStorage.getItem('sesionExpirada') === '1') {
+    mostrarError('Tu sesión expiró por inactividad. Vuelve a iniciar sesión.');
+    sessionStorage.removeItem('sesionExpirada');
 }
 
 function traducirError(codigo) {
@@ -33,11 +40,16 @@ function traducirError(codigo) {
 formLogin.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const email = document.getElementById('loginEmail').value.trim();
+    const email = limpiarTexto(document.getElementById('loginEmail').value, 254).toLowerCase();
     const clave = document.getElementById('loginClave').value;
 
     if (!email || !clave) {
         mostrarError("Ingresa tu correo y contraseña.");
+        return;
+    }
+
+    if (!validarEmail(email)) {
+        mostrarError("Ingresa un correo electrónico válido.");
         return;
     }
 

@@ -1,6 +1,7 @@
 import { db } from './firebase-config.js';
 import { collection, addDoc, getDocs, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
+import { limpiarTexto, validarMonto } from './utils.js';
 
 const TRABAJADORES = ["Patucho", "Lucho", "Flaquito"];
 const COL_ADELANTOS = "adelantos";
@@ -247,15 +248,20 @@ formMovimiento.addEventListener('submit', async (e) => {
 
     const trabajador = document.getElementById('trabajador').value;
     const tipo = document.getElementById('tipoMovimiento').value;
-    const concepto = document.getElementById('concepto').value.trim();
-    const monto = parseFloat(document.getElementById('montoPersonal').value);
-    const dia = document.getElementById('diaMovimiento').value;
+    const concepto = limpiarTexto(document.getElementById('concepto').value, 120);
+    const monto = validarMonto(document.getElementById('montoPersonal').value, 0.01, 1000000);
+    const dia = limpiarTexto(document.getElementById('diaMovimiento').value, 10);
 
-    if (!Number.isFinite(monto) || monto <= 0) {
+    if (!TRABAJADORES.includes(trabajador)) {
+        toast("Selecciona un trabajador válido.", "warning");
+        return;
+    }
+
+    if (monto === null) {
         toast("Ingresa un monto válido mayor a 0.", "warning");
         return;
     }
-    if (!dia) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dia)) {
         toast("Selecciona la fecha del movimiento.", "warning");
         return;
     }
