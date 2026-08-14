@@ -30,6 +30,7 @@ const nuevoTelefonoInput = document.getElementById('nuevoTelefono');
 
 const tablaVentasPagado = document.getElementById('tablaVentasPagado');
 const tablaVentasDebe = document.getElementById('tablaVentasDebe');
+const buscadorVentasDia = document.getElementById('buscadorVentasDia');
 const ventasDiaCache = [];
 let saldosMap = {};
 let saldosNormMap = {};
@@ -123,7 +124,35 @@ function renderVentasDia() {
         'Aún no hay pagos recibidos en el período seleccionado.'
     );
     renderDebe(agruparPendientes(pendientes));
+    aplicarFiltroBuscadorVentas();
 }
+
+function aplicarFiltroBuscadorVentas() {
+    const termino = normalizarTexto(buscadorVentasDia.value);
+    const mensaje = `Sin resultados para "${buscadorVentasDia.value.trim()}".`;
+
+    [tablaVentasPagado, tablaVentasDebe].forEach((tbody) => {
+        tbody.querySelectorAll('tr.sin-resultados').forEach((tr) => tr.remove());
+
+        const filas = [...tbody.querySelectorAll('tr')];
+        let visibles = 0;
+
+        filas.forEach((tr) => {
+            const coincide = termino === '' || normalizarTexto(tr.textContent).includes(termino);
+            tr.style.display = coincide ? '' : 'none';
+            if (coincide) visibles++;
+        });
+
+        if (termino !== '' && visibles === 0) {
+            const tr = document.createElement('tr');
+            tr.className = 'sin-resultados';
+            tr.innerHTML = `<td colspan="4" class="empty-cell">${escapeHtml(mensaje)}</td>`;
+            tbody.appendChild(tr);
+        }
+    });
+}
+
+buscadorVentasDia.addEventListener('input', aplicarFiltroBuscadorVentas);
 
 async function cargarSaldos() {
     const snapshot = await getDocs(
