@@ -1,7 +1,7 @@
 import { db } from './firebase-config.js';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
-import { normalizarTexto, limpiarTexto, validarMonto, ejecutarConBotonBloqueado, leerCache, guardarCache } from './utils.js';
+import { normalizarTexto, limpiarTexto, validarMonto, ejecutarConBotonBloqueado, leerCache, guardarCache, esCoincidenciaFuzzy } from './utils.js';
 
 const formGasto = document.getElementById('formGasto');
 const tablaGastos = document.getElementById('tablaGastos');
@@ -115,11 +115,10 @@ async function cargarGastos() {
 }
 
 function renderGastos() {
-    const termino = normalizarTexto(filtroGastoTexto);
     const diaFiltro = filtroGastoDia;
 
     const filtrados = gastosCache.filter((g) => {
-        const coincideTexto = !termino || normalizarTexto(g.producto || g.descripcion || "").includes(termino);
+        const coincideTexto = esCoincidenciaFuzzy(g.producto || g.descripcion || "", filtroGastoTexto);
         const coincideDia = !diaFiltro || diaLocal(g.fecha) === diaFiltro;
         return coincideTexto && coincideDia;
     });
@@ -174,14 +173,10 @@ function cargarInventario() {
 }
 
 function renderInventario() {
-    const termino = normalizarTexto(filtroInventario);
-    const filtrados = inventarioCache.filter((p) => {
-        if (!termino) return true;
-        return normalizarTexto(p.nombre).includes(termino);
-    });
+    const filtrados = inventarioCache.filter((p) => esCoincidenciaFuzzy(p.nombre, filtroInventario));
 
     if (filtrados.length === 0) {
-        tablaInventario.innerHTML = `<tr><td colspan="2" class="empty-cell">${termino ? "No hay productos que coincidan." : "Aún no hay productos en el inventario. Agrégales con el buscador de arriba."}</td></tr>`;
+        tablaInventario.innerHTML = `<tr><td colspan="2" class="empty-cell">${filtroInventario.trim() ? "No hay productos que coincidan." : "Aún no hay productos en el inventario. Agrégales con el buscador de arriba."}</td></tr>`;
         return;
     }
 
@@ -328,10 +323,8 @@ productoBusqueda.addEventListener('input', (e) => {
 });
 
 function mostrarSugerencias(texto) {
-    const termino = normalizarTexto(texto);
-
     const matches = inventarioCache
-        .filter((p) => normalizarTexto(p.nombre).includes(termino))
+        .filter((p) => esCoincidenciaFuzzy(p.nombre, texto))
         .sort((a, b) => normalizarTexto(a.nombre).localeCompare(normalizarTexto(b.nombre)))
         .slice(0, 8);
 

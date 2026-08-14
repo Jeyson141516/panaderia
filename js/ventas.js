@@ -1,7 +1,7 @@
 import { db } from './firebase-config.js';
 import { collection, addDoc, getDocs, serverTimestamp, query, where, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
-import { normalizarTexto, limpiarTexto, validarEntero, validarMonto, validarTelefono, ejecutarConBotonBloqueado, leerCache, guardarCache } from './utils.js';
+import { normalizarTexto, limpiarTexto, validarEntero, validarMonto, validarTelefono, ejecutarConBotonBloqueado, leerCache, guardarCache, esCoincidenciaFuzzy } from './utils.js';
 
 const PRECIO_FUNDA = 1.00;
 
@@ -141,7 +141,7 @@ function aplicarFiltroBuscadorVentas() {
         let visibles = 0;
 
         filas.forEach((tr) => {
-            const coincide = termino === '' || normalizarTexto(tr.textContent).includes(termino);
+            const coincide = esCoincidenciaFuzzy(tr.textContent, buscadorVentasDia.value);
             tr.style.display = coincide ? '' : 'none';
             if (coincide) visibles++;
         });
@@ -164,12 +164,11 @@ function aplicarFiltroBuscadorVentas() {
  * usuario filtra, el total refleja las ventas pagadas visibles.
  */
 function actualizarContadorDia() {
-    const termino = normalizarTexto(buscadorVentasDia.value);
     let total = 0;
 
     ventasDiaCache.forEach((v) => {
         if (v.estado !== 'pagado') return;
-        if (termino && !normalizarTexto(v.cliente).includes(termino)) return;
+        if (!esCoincidenciaFuzzy(v.cliente, buscadorVentasDia.value)) return;
         total += v.total;
     });
 
@@ -442,14 +441,12 @@ clienteBusqueda.addEventListener('input', async (e) => {
 });
 
 function buscarClientes(texto) {
-    const termino = normalizarTexto(texto);
-
     listaSugerencias.innerHTML = '';
     indiceActivo = -1;
     let matches = 0;
 
     clientesCache.forEach((cliente) => {
-        if (cliente.nombreNorm.includes(termino)) {
+        if (esCoincidenciaFuzzy(cliente.nombre, texto)) {
             matches++;
             const li = document.createElement('li');
             li.textContent = cliente.nombre;
