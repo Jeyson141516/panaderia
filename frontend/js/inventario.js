@@ -1,10 +1,12 @@
 import { db } from './firebase-config.js';
-import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
 import { normalizarTexto, limpiarTexto, validarMonto, ejecutarConBotonBloqueado } from './utils.js';
 
 const formGasto = document.getElementById('formGasto');
 const tablaGastos = document.getElementById('tablaGastos');
+const busquedaGasto = document.getElementById('busquedaGasto');
+const fechaFiltroGasto = document.getElementById('fechaFiltroGasto');
 
 const productoBusqueda = document.getElementById('productoBusqueda');
 const btnNuevoProducto = document.getElementById('btnNuevoProducto');
@@ -25,6 +27,10 @@ let inventarioCache = [];
 let filtroInventario = "";
 let productoSeleccionado = null;
 let indiceActivo = -1;
+
+let gastosCache = [];
+let filtroGastoTexto = "";
+let filtroGastoDia = "";
 
 function formatearMoneda(valor) {
     return `$${Number(valor).toFixed(2)}`;
@@ -85,28 +91,55 @@ formGasto.addEventListener('submit', (e) => {
     });
 });
 
+function diaLocal(fecha) {
+    if (!fecha) return "";
+    const d = fecha.toDate ? fecha.toDate() : (fecha instanceof Date ? fecha : null);
+    if (!d) return "";
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
 async function cargarGastos() {
     try {
-        const snapshot = await getDocs(query(collection(db, "gastos_inventario"), orderBy("fecha", "desc"), limit(30)));
+        const snapshot = await getDocs(query(collection(db, "gastos_inventario"), orderBy("fecha", "desc")));
 
-        const gastos = [];
-        snapshot.forEach((docSnap) => gastos.push(docSnap.data()));
+        gastosCache = [];
+        snapshot.forEach((docSnap) => gastosCache.push({ id: docSnap.id, ...docSnap.data() }));
 
-        if (gastos.length === 0) {
-            tablaGastos.innerHTML = '<tr><td colspan="3" class="empty-cell">Aún no hay gastos registrados.</td></tr>';
-            return;
-        }
-
-        tablaGastos.innerHTML = gastos.map((g) => `
-            <tr>
-                <td>${formatearFecha(g.fecha)}</td>
-                <td>${escapeHtml(g.producto || g.descripcion || "—")}</td>
-                <td class="monto-cell">${formatearMoneda(g.monto)}</td>
-            </tr>`).join("");
+        renderGastos();
     } catch (error) {
         console.error("Error cargando gastos:", error);
         tablaGastos.innerHTML = '<tr><td colspan="3" class="empty-cell">No se pudo cargar el historial de gastos.</td></tr>';
     }
+}
+
+function renderGastos() {
+    const termino = normalizarTexto(filtroGastoTexto);
+    const diaFiltro = filtroGastoDia;
+
+    const filtrados = gastosCache.filter((g) => {
+        const coincideTexto = !termino || normalizarTexto(g.producto || g.descripcion || "").includes(termino);
+        const coincideDia = !diaFiltro || diaLocal(g.fecha) === diaFiltro;
+        return coincideTexto && coincideDia;
+    });
+
+    if (gastosCache.length === 0) {
+        tablaGastos.innerHTML = '<tr><td colspan="3" class="empty-cell">Aún no hay gastos registrados.</td></tr>';
+        return;
+    }
+
+    if (filtrados.length === 0) {
+        tablaGastos.innerHTML = '<tr><td colspan="3" class="empty-cell">No hay gastos que coincidan con los filtros.</td></tr>';
+        return;
+    }
+
+    tablaGastos.innerHTML = filtrados.map((g) => `
+        <tr>
+            <td>${formatearFecha(g.fecha)}</td>
+            <td>${escapeHtml(g.producto || g.descripcion || "—")}</td>
+            <td class="monto-cell">${formatearMoneda(g.monto)}</td>
+        </tr>`).join("");
 }
 
 /* ============ Inventario de productos ============ */
@@ -347,6 +380,16 @@ document.addEventListener('click', (e) => {
 busquedaInventario.addEventListener('input', (e) => {
     filtroInventario = e.target.value;
     renderInventario();
+});
+
+busquedaGasto.addEventListener('input', (e) => {
+    filtroGastoTexto = e.target.value;
+    renderGastos();
+});
+
+fechaFiltroGasto.addEventListener('change', (e) => {
+    filtroGastoDia = e.target.value;
+    renderGastos();
 });
 
 cargarInventario();

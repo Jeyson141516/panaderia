@@ -812,6 +812,18 @@ input[type="submit"]:disabled:hover {
     max-width: 1000px;
 }
 
+.gastos-filtros {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.gastos-filtros .inventory-search,
+.gastos-filtros .fecha-dia-input {
+    margin-bottom: 14px;
+}
+
 .ventas-dia-header {
     display: flex;
     align-items: center;
