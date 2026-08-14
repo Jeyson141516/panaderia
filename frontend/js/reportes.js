@@ -12,7 +12,7 @@ const lblTotal = document.getElementById('lblTotal');
 const listaMejoresClientes = document.getElementById('listaMejoresClientes');
 const infoGrafico1 = document.getElementById('infoGrafico1');
 
-const lblResVentas = document.getElementById('lblResVentas');
+const lblResIngresosContado = document.getElementById('lblResIngresosContado');
 const lblResGastos = document.getElementById('lblResGastos');
 const lblResPersonal = document.getElementById('lblResPersonal');
 const lblResPersonalDetalle = document.getElementById('lblResPersonalDetalle');
@@ -113,8 +113,8 @@ async function cargarReporte() {
             getDocs(query(collection(db, "pagos_personal"), ...rangoFechas(), orderBy("fecha", "desc")))
         ]);
 
-        let totalVentas = 0;
         let totalContado = 0;
+        let ingresosContado = 0;
         let totalCredito = 0;
         let totalAbonos = 0;
         let totalFundas = 0;
@@ -126,7 +126,12 @@ async function cargarReporte() {
             const estado = venta.estadoPago || "pagado";
             const fundas = Number(venta.cantidadFundas) || 0;
 
-            totalVentas += monto;
+            // Efectivo REAL recaudado de contado en el período. Se acumula sin
+            // depender del filtro de estado porque alimenta exclusivamente la
+            // fórmula de la utilidad neta (flujo de caja real del período).
+            if (estado === 'pagado') {
+                ingresosContado += monto;
+            }
 
             if (estadoFiltro.value === "todos" || estado === estadoFiltro.value) {
                 totalFundas += fundas;
@@ -161,10 +166,11 @@ async function cargarReporte() {
 
         const pagosTrabajadores = construirPagosTrabajadores(adelantosSnap, pagosSnap);
         const totalAPagar = totalPagosPersonal - totalAdelantos;
-        // Utilidad Neta = Ventas Totales - Gastos (Insumos) - Total Adelantos Entregados.
-        // Los adelantos son una SALIDA DE EFECTIVO REAL del negocio: se descuentan de
-        // inmediato de las ventas, sin importar si el salario base está liquidado o es $0.00.
-        const utilidadNeta = totalVentas - totalGastos - totalAdelantos;
+        // Utilidad Neta = Ventas de Contado - Gastos (Insumos) - Total Adelantos Entregados.
+        // Se basa EXCLUSIVAMENTE en el flujo de efectivo real del período: solo el
+        // contado recaudado entra a la fórmula. Las ventas fiadas (crédito) y los
+        // abonos NO la alteran, y los adelantos se descuentan como salida real de caja.
+        const utilidadNeta = ingresosContado - totalGastos - totalAdelantos;
 
         const totalFacturado = totalContado + totalCredito;
         const totalPendiente = Math.max(0, totalCredito - totalAbonos);
@@ -180,7 +186,7 @@ async function cargarReporte() {
             totalPendiente,
             totalFacturado,
             totalFundas,
-            totalVentas,
+            ingresosContado,
             totalGastos,
             totalAdelantos,
             totalPagosPersonal,
@@ -190,7 +196,7 @@ async function cargarReporte() {
             clientes: Object.entries(clientesMap).sort((a, b) => b[1] - a[1]).slice(0, 5)
         };
 
-        lblResVentas.textContent = formatearMoneda(totalVentas);
+        lblResIngresosContado.textContent = formatearMoneda(ingresosContado);
         lblResGastos.textContent = formatearMoneda(totalGastos);
         lblResPersonal.textContent = formatearMoneda(totalAPagar);
         lblResPersonalDetalle.textContent = `Salario Total: ${formatearMoneda(totalPagosPersonal)} · Adelantos: ${formatearMoneda(totalAdelantos)}`;
@@ -359,14 +365,15 @@ function abrirVentanaImpresion() {
             <div class="sub">Período: ${etiquetaPeriodo} · ${r.fechaInicio || 'inicio'} a ${r.fechaFin || 'hoy'} · Estado: ${r.estado}</div>
             <h2 style="font-size:16px;">💰 Resumen Financiero</h2>
             <div class="grid">
-                <div class="box"><span class="lbl">Ventas (Ingresos)</span><b>${formatearMoneda(r.totalVentas)}</b></div>
+                <div class="box"><span class="lbl">Ventas de Contado (Efectivo)</span><b>${formatearMoneda(r.ingresosContado)}</b></div>
                 <div class="box"><span class="lbl">Gastos (Insumos)</span><b>${formatearMoneda(r.totalGastos)}</b></div>
-                <div class="box"><span class="lbl">Adelantos (Salida de Caja)</span><b>${formatearMoneda(r.totalAdelantos)}</b></div>
                 <div class="box"><span class="lbl">Total a Pagar a Personal</span><b>${formatearMoneda(r.totalAPagar)}</b></div>
+                <div class="box"><span class="lbl">Adelantos (Salida de Caja)</span><b>${formatearMoneda(r.totalAdelantos)}</b></div>
                 <div class="box ${r.utilidadNeta >= 0 ? 'utilidad' : 'utilidad negativa'}"><span class="lbl">Utilidad Neta</span><b>${formatearMoneda(r.utilidadNeta)}</b></div>
             </div>
             <p style="margin-top: 12px; color: #6b7280; font-size: 13px;">
-                Utilidad = Ventas Totales − Gastos (Insumos) − Total Adelantos Entregados<br>
+                Utilidad = Ventas de Contado − Gastos (Insumos) − Total Adelantos Entregados<br>
+                <i>Los fiados y abonos no alteran esta fórmula: se basa en el efectivo real que entró y salió de caja.</i><br>
                 Detalle Personal — Salario Total: <b>${formatearMoneda(r.totalPagosPersonal)}</b> · Adelantos (salida de efectivo real): <b>${formatearMoneda(r.totalAdelantos)}</b>
             </p>
             <h2 style="font-size:16px;margin-top:28px;">👥 Pagos por Trabajador (Total a Pagar = Salario − Adelantos)</h2>
