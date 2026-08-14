@@ -12,6 +12,10 @@ const listaSugerenciasProducto = document.getElementById('listaSugerenciasProduc
 const busquedaInventario = document.getElementById('busquedaInventario');
 const tablaInventario = document.getElementById('tablaInventario');
 
+const btnVerInventario = document.getElementById('btnVerInventario');
+const modalInventario = document.getElementById('modalInventario');
+const cerrarModalInventario = document.getElementById('cerrarModalInventario');
+
 const modalProducto = document.getElementById('modalProducto');
 const cerrarModalProducto = document.getElementById('cerrarModalProducto');
 const guardarProductoModal = document.getElementById('guardarProductoModal');
@@ -160,6 +164,30 @@ async function eliminarProducto(id) {
         toast("Hubo un error al eliminar el producto.", "error");
     }
 }
+
+btnVerInventario.addEventListener('click', () => {
+    busquedaInventario.value = "";
+    filtroInventario = "";
+    cargarInventario();
+    modalInventario.style.display = 'flex';
+    setTimeout(() => busquedaInventario.focus(), 50);
+});
+
+cerrarModalInventario.addEventListener('click', cerrarModalInventarioHandler);
+modalInventario.addEventListener('click', (e) => {
+    if (e.target === modalInventario) cerrarModalInventarioHandler();
+});
+
+function cerrarModalInventarioHandler() {
+    modalInventario.style.display = 'none';
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        cerrarModalInventarioHandler();
+        cerrarModalProductoHandler();
+    }
+});
 
 btnNuevoProducto.addEventListener('click', () => {
     modalProducto.style.display = 'flex';

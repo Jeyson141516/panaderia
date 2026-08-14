@@ -304,6 +304,10 @@ header p {
     font-size: 0.95rem;
 }
 
+header .btn-accion {
+    margin-top: 14px;
+}
+
 /* ============ Tarjetas de cristal ============ */
 main .card + .card {
     margin-top: 22px;
@@ -1154,6 +1158,8 @@ button:disabled {
     border-radius: var(--radius-lg);
     width: 100%;
     max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
     box-shadow: var(--shadow-lg);
     animation: modalIn .22s ease;
 }
@@ -1166,6 +1172,50 @@ button:disabled {
 .modal-card h3 {
     margin-bottom: 20px;
     font-size: 1.1rem;
+}
+
+.modal-card--wide {
+    max-width: 540px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modal-card--wide .table-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.modal-header h3 {
+    margin: 0;
+}
+
+.modal-close {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, .7);
+    color: var(--text);
+    font-size: .95rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+
+.modal-close:hover {
+    background: rgba(239, 68, 68, .12);
+    color: var(--danger);
 }
 
 .modal-actions {
@@ -1440,11 +1490,6 @@ nav, main {
     input[type="date"],
     select {
         font-size: 16px;
-    }
-
-    .modal-card {
-        max-height: 90vh;
-        overflow-y: auto;
     }
 
     .saldo-info {
@@ -1803,6 +1848,11 @@ nav, main {
 :root[data-theme="oscuro"] .modal-card {
     background: rgba(27, 31, 45, 0.96);
     border-color: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme="oscuro"] .modal-close {
+    background: rgba(255, 255, 255, .06);
+    border-color: rgba(255, 255, 255, .14);
 }
 
 /* Badges y etiquetas de estado */

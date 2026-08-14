@@ -46,6 +46,7 @@
         <header>
             <h1>Inventario y Gastos</h1>
             <p>Registra gastos de producción y administra los productos e insumos del negocio.</p>
+            <button type="button" id="btnVerInventario" class="btn-accion">📦 Ver Inventario y Productos</button>
         </header>
 
         <div class="card">
@@ -70,25 +71,6 @@
         </div>
 
         <div class="card card-wide">
-            <h3>📋 Inventario General</h3>
-            <input type="text" id="busquedaInventario" class="inventory-search" placeholder="🔍 Buscar en la lista...">
-
-            <div class="table-wrap">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Producto</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaInventario">
-                        <tr><td colspan="2" class="empty-cell">Cargando inventario...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="card card-wide">
             <h3>🧾 Historial de Gastos Realizados</h3>
             <div class="table-wrap">
                 <table class="data-table">
@@ -106,6 +88,29 @@
             </div>
         </div>
     </main>
+
+    <div id="modalInventario" class="modal">
+        <div class="modal-card modal-card--wide">
+            <div class="modal-header">
+                <h3>📦 Inventario y Productos</h3>
+                <button type="button" id="cerrarModalInventario" class="modal-close" aria-label="Cerrar inventario" title="Cerrar">✕</button>
+            </div>
+            <input type="text" id="busquedaInventario" class="inventory-search" placeholder="🔍 Buscar en la lista...">
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaInventario">
+                        <tr><td colspan="2" class="empty-cell">Cargando inventario...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <div id="modalProducto" class="modal">
         <div class="modal-card">
