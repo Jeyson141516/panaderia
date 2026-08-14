@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Financiero — Panadería Familiar</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --tinta: #1f2937;
+            --tinta-suave: #111827;
+            --muted: #6b7280;
+            --claro: #9ca3af;
+            --borde: #e5e7eb;
+            --borde-fuerte: #d1d5db;
+            --fondo-celda: #f9fafb;
+            --verde: #16a34a;
+            --verde-bg: #ecfdf5;
+            --verde-borde: #6ee7b7;
+            --rojo: #dc2626;
+            --rojo-bg: #fef2f2;
+            --rojo-borde: #fca5a5;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f1f5f9;
+            color: var(--tinta);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Barra de acciones (se oculta al imprimir) */
+        .acciones {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 12px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--borde);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+        }
+
+        .acciones button {
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 9px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--borde);
+            background: #ffffff;
+            color: var(--tinta);
+            cursor: pointer;
+            transition: background .15s ease, box-shadow .15s ease;
+        }
+
+        .acciones button:hover {
+            background: var(--fondo-celda);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
+        }
+
+        .acciones button.primario {
+            background: var(--verde);
+            border-color: var(--verde);
+            color: #fff;
+        }
+
+        .acciones button.primario:hover { background: #15803d; }
+        .acciones button:disabled { opacity: .55; cursor: not-allowed; }
+
+        /* Estado de error / sin datos */
+        .aviso {
+            max-width: 560px;
+            margin: 60px auto;
+            background: #fff;
+            border: 1px solid var(--borde);
+            border-radius: 12px;
+            padding: 28px;
+            text-align: center;
+        }
+
+        .aviso.oculto { display: none; }
+        .aviso h2 { font-size: 1.05rem; margin-bottom: 8px; color: var(--tinta-suave); }
+        .aviso p { font-size: 0.9rem; color: var(--muted); margin-bottom: 16px; }
+        .aviso button.primario {
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 9px 18px;
+            border-radius: 8px;
+            border: none;
+            background: var(--verde);
+            color: #fff;
+            cursor: pointer;
+        }
+
+        /* Documento ejecutivo */
+        .documento {
+            background: #ffffff;
+            max-width: 980px;
+            margin: 28px auto;
+            padding: 44px 52px;
+            border: 1px solid var(--borde);
+            border-radius: 4px;
+            box-shadow: 0 6px 24px rgba(15, 23, 42, .08);
+        }
+
+        .documento.oculto { display: none; }
+
+        .documento h1 { font-size: 25px; font-weight: 700; color: var(--tinta-suave); }
+        .documento .org { font-size: 13.5px; color: var(--muted); margin-top: 2px; }
+        .documento .meta { font-size: 12.5px; color: var(--muted); margin-top: 14px; }
+
+        .documento h2 {
+            font-size: 12px;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 700;
+            margin-top: 28px;
+            padding-bottom: 6px;
+            border-bottom: 1.5px solid var(--borde-fuerte);
+        }
+
+        .resumen-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+
+        .caja {
+            flex: 1 1 160px;
+            border: 1px solid var(--borde);
+            background: var(--fondo-celda);
+            border-radius: 8px;
+            padding: 12px 14px;
+        }
+
+        .caja .lbl {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .caja .val { display: block; font-size: 17px; font-weight: 700; color: var(--tinta-suave); }
+        .caja.utilidad { background: var(--verde-bg); border-color: var(--verde-borde); }
+        .caja.utilidad.negativa { background: var(--rojo-bg); border-color: var(--rojo-borde); }
+
+        .nota { font-size: 11.5px; color: var(--muted); margin-top: 12px; line-height: 1.55; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+
+        th {
+            font-size: 10.5px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--muted);
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1.5px solid var(--borde-fuerte);
+        }
+
+        td {
+            font-size: 13px;
+            color: var(--tinta);
+            padding: 9px 8px;
+            border-bottom: 1px solid var(--borde);
+        }
+
+        th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .sin-datos { text-align: center; color: var(--claro); }
+
+        .pie {
+            margin-top: 28px;
+            padding-top: 10px;
+            border-top: 1px solid var(--borde);
+            font-size: 11px;
+            color: var(--claro);
+        }
+
+        @media print {
+            * {
+                background: #ffffff !important;
+                color: #000 !important;
+                box-shadow: none !important;
+                text-shadow: none !important;
+                border-color: #d1d5db !important;
+            }
+
+            body { background: #fff !important; }
+
+            .acciones,
+            .aviso { display: none !important; }
+
+            .documento {
+                margin: 0;
+                max-width: 100%;
+                padding: 0;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            .documento h1 { font-size: 22pt; margin-bottom: 4pt; }
+            .documento .org { font-size: 10pt; }
+            .documento .meta { font-size: 9.5pt; margin-top: 10pt; }
+            .documento h2 { font-size: 10pt; margin-top: 18pt; padding-bottom: 4pt; }
+
+            .resumen-grid { flex-wrap: nowrap; gap: 10pt; }
+            .caja { flex: 1 1 18%; padding: 8pt 10pt; border-radius: 0; }
+            .caja .lbl { font-size: 7.5pt; margin-bottom: 3pt; }
+            .caja .val { font-size: 11pt; }
+
+            .nota { font-size: 8.5pt; margin-top: 8pt; }
+            .pie { margin-top: 18pt; padding-top: 6pt; font-size: 8pt; }
+
+            table { font-size: 9.5pt; margin-top: 8pt; }
+            th { font-size: 7.5pt; padding: 6pt; }
+            td { font-size: 9.5pt; padding: 6pt; }
+
+            h2 { break-after: avoid; }
+            table { page-break-inside: auto; }
+            tr { break-inside: avoid; page-break-inside: avoid; }
+            thead { display: table-header-group; }
+        }
+
+        @page {
+            size: A4;
+            margin: 12mm;
+        }
+    </style>
+</head>
+<body>
+    <div class="acciones">
+        <button id="btnVolver" title="Volver a Reportes">⬅ Volver</button>
+        <button id="btnImprimir" title="Abre el diálogo de impresión del navegador">🖨️ Imprimir</button>
+        <button id="btnDescargar" class="primario" title="Descarga directa del PDF (vectorial, sin diálogo de impresión)">📥 Descargar PDF</button>
+    </div>
+
+    <div id="estadoMensaje" class="aviso oculto">
+        <h2>No hay reporte disponible</h2>
+        <p>Genera primero el reporte en la sección Reportes para poder exportarlo o imprimirlo.</p>
+        <button id="btnIrReportes" class="primario">Ir a Reportes</button>
+    </div>
+
+    <div id="reporteDocumento" class="documento"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script type="module" src="js/reporte-impresion.js"></script>
+</body>
+</html>

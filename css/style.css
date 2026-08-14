@@ -499,6 +499,29 @@ select:focus {
 .btn-accion.success { background: var(--success); }
 .btn-accion.success:hover { filter: brightness(1.05); }
 
+.btn-accion.outline {
+    background: rgba(255, 255, 255, .7);
+    color: var(--text);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.btn-accion.outline:hover {
+    background: rgba(255, 255, 255, .95);
+    filter: none;
+}
+
+:root[data-theme="oscuro"] .btn-accion.outline {
+    background: rgba(255, 255, 255, .06);
+    color: var(--text);
+    border-color: rgba(255, 255, 255, .16);
+}
+
+:root[data-theme="oscuro"] .btn-accion.outline:hover {
+    background: rgba(255, 255, 255, .12);
+}
+
 /* Evita el doble-toque de zoom en táctiles */
 button,
 a,

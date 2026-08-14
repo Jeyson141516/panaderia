@@ -4,6 +4,7 @@ import { toast, escapeHtml } from './ui.js';
 
 const btnConsultar = document.getElementById('btnConsultar');
 const btnPdf = document.getElementById('btnPdf');
+const btnImprimir = document.getElementById('btnImprimir');
 const lblContado = document.getElementById('lblContado');
 const lblCredito = document.getElementById('lblCredito');
 const lblAbonos = document.getElementById('lblAbonos');
@@ -320,88 +321,22 @@ function descargarCsv() {
 
 btnCsv.addEventListener('click', descargarCsv);
 
-function abrirVentanaImpresion() {
+function abrirVistaImpresion(accion) {
     if (!ultimoReporte) {
         toast("Primero genera el reporte.", "warning");
         return;
     }
 
-    const r = ultimoReporte;
-    const etiquetaPeriodo = r.periodo === 'hoy' ? 'Hoy' : r.periodo === 'semana' ? 'Semana' : r.periodo === 'mes' ? 'Mes' : 'Personalizado';
-    const clientesHtml = r.clientes.length > 0
-        ? r.clientes.map(([cli, fundas], index) =>
-            `<tr><td>${index + 1}</td><td>${escapeHtml(cli)}</td><td style="text-align:right">${fundas} fundas</td></tr>`).join('')
-        : '<tr><td colspan="3" style="text-align:center;color:#888;">Sin datos</td></tr>';
+    try {
+        localStorage.setItem('panaderia:reporte-actual', JSON.stringify(ultimoReporte));
+    } catch (e) {
+        toast("No se pudo guardar el reporte. Intenta de nuevo.", "error");
+        return;
+    }
 
-    const pagosTrabajadoresHtml = r.pagosTrabajadores.length > 0
-        ? r.pagosTrabajadores.map((f) =>
-            `<tr><td>${escapeHtml(f.trabajador)}</td><td style="text-align:right">${formatearMoneda(f.salarioTotal)}</td><td style="text-align:right">${formatearMoneda(f.adelantos)}</td><td style="text-align:right"><b>${formatearMoneda(f.totalPagar)}</b></td></tr>`).join('')
-        : '<tr><td colspan="4" style="text-align:center;color:#888;">Sin datos</td></tr>';
-
-    const ventana = window.open('', '_blank', 'width=800,height=600');
-    ventana.document.write(`
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
-            <title>Reporte Financiero - Panadería Familiar</title>
-            <style>
-                body { font-family: 'Segoe UI', Arial, sans-serif; color: #1f2937; padding: 32px; }
-                h1 { font-size: 22px; margin: 0 0 4px; }
-                .sub { color: #6b7280; margin-bottom: 24px; }
-                table { width: 100%; border-collapse: collapse; margin-top: 18px; }
-                th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 8px; text-align: left; }
-                th { background: #f3f4f6; }
-                .grid { display: flex; gap: 16px; flex-wrap: wrap; }
-                .box { flex: 1; min-width: 150px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; text-align: center; }
-                .box b { display: block; font-size: 20px; margin-top: 4px; }
-                .box .lbl { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em; }
-                .utilidad { background: #ecfdf5; border-color: #6ee7b7; }
-                .utilidad.negativa { background: #fef2f2; border-color: #fca5a5; }
-            </style>
-        </head>
-        <body>
-            <h1>Reporte Financiero — Panadería Familiar</h1>
-            <div class="sub">Período: ${etiquetaPeriodo} · ${r.fechaInicio || 'inicio'} a ${r.fechaFin || 'hoy'} · Estado: ${r.estado}</div>
-            <h2 style="font-size:16px;">💰 Resumen Financiero</h2>
-            <div class="grid">
-                <div class="box"><span class="lbl">Ventas de Contado (Efectivo)</span><b>${formatearMoneda(r.ingresosContado)}</b></div>
-                <div class="box"><span class="lbl">Gastos (Insumos)</span><b>${formatearMoneda(r.totalGastos)}</b></div>
-                <div class="box"><span class="lbl">Total a Pagar a Personal</span><b>${formatearMoneda(r.totalAPagar)}</b></div>
-                <div class="box"><span class="lbl">Adelantos (Salida de Caja)</span><b>${formatearMoneda(r.totalAdelantos)}</b></div>
-                <div class="box ${r.utilidadNeta >= 0 ? 'utilidad' : 'utilidad negativa'}"><span class="lbl">Utilidad Neta</span><b>${formatearMoneda(r.utilidadNeta)}</b></div>
-            </div>
-            <p style="margin-top: 12px; color: #6b7280; font-size: 13px;">
-                Utilidad = Ventas de Contado − Gastos (Insumos) − Total Adelantos Entregados<br>
-                <i>Los fiados y abonos no alteran esta fórmula: se basa en el efectivo real que entró y salió de caja.</i><br>
-                Detalle Personal — Salario Total: <b>${formatearMoneda(r.totalPagosPersonal)}</b> · Adelantos (salida de efectivo real): <b>${formatearMoneda(r.totalAdelantos)}</b>
-            </p>
-            <h2 style="font-size:16px;margin-top:28px;">👥 Pagos por Trabajador (Total a Pagar = Salario − Adelantos)</h2>
-            <table>
-                <thead><tr><th>Trabajador</th><th style="text-align:right">Salario Total</th><th style="text-align:right">Adelantos</th><th style="text-align:right">Total a Pagar</th></tr></thead>
-                <tbody>${pagosTrabajadoresHtml}</tbody>
-            </table>
-            <h2 style="font-size:16px;margin-top:28px;">📅 Detalle de Ventas</h2>
-            <div class="grid">
-                <div class="box">Contado<b>${formatearMoneda(r.totalContado)}</b></div>
-                <div class="box">Fiado / Crédito<b>${formatearMoneda(r.totalCredito)}</b></div>
-                <div class="box">Abonos recibidos<b>${formatearMoneda(r.totalAbonos)}</b></div>
-                <div class="box">Pendiente de cobro<b>${formatearMoneda(r.totalPendiente)}</b></div>
-                <div class="box">Total Facturado<b>${formatearMoneda(r.totalFacturado)}</b></div>
-                <div class="box">Fundas vendidas<b>${r.totalFundas}</b></div>
-            </div>
-            <h2 style="font-size:16px;margin-top:28px;">🏆 Mejores Clientes</h2>
-            <table>
-                <thead><tr><th>#</th><th>Cliente</th><th>Fundas</th></tr></thead>
-                <tbody>${clientesHtml}</tbody>
-            </table>
-            <p style="margin-top: 28px; color: #9ca3af; font-size: 12px;">Generado el ${new Date().toLocaleString('es-EC')}</p>
-        </body>
-        </html>
-    `);
-    ventana.document.close();
-    ventana.focus();
-    setTimeout(() => ventana.print(), 350);
+    window.open(`reporte-impresion.html?accion=${accion}`, '_blank');
 }
 
-btnPdf.addEventListener('click', abrirVentanaImpresion);
+btnImprimir.addEventListener('click', () => abrirVistaImpresion('imprimir'));
+
+btnPdf.addEventListener('click', () => abrirVistaImpresion('descargar'));
