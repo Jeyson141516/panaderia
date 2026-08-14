@@ -1,7 +1,7 @@
 import { db } from './firebase-config.js';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
-import { normalizarTexto, limpiarTexto, validarMonto, ejecutarConBotonBloqueado } from './utils.js';
+import { normalizarTexto, limpiarTexto, validarMonto, ejecutarConBotonBloqueado, leerCache, guardarCache } from './utils.js';
 
 const formGasto = document.getElementById('formGasto');
 const tablaGastos = document.getElementById('tablaGastos');
@@ -144,21 +144,33 @@ function renderGastos() {
 
 /* ============ Inventario de productos ============ */
 
-async function cargarInventario() {
-    try {
-        const snapshot = await getDocs(query(collection(db, "inventario"), orderBy("nombreNorm", "asc")));
+const CACHE_INVENTARIO = 'inventario';
+const TTL_INVENTARIO_MS = 30 * 60 * 1000;
 
-        inventarioCache = [];
-        snapshot.forEach((docSnap) => {
-            inventarioCache.push({ id: docSnap.id, ...docSnap.data() });
-        });
-
+function cargarInventario() {
+    // Renderiza la lista guardada al instante mientras se refresca en segundo plano.
+    const cacheado = leerCache(CACHE_INVENTARIO, TTL_INVENTARIO_MS);
+    if (cacheado) {
+        inventarioCache = cacheado;
         renderInventario();
-    } catch (error) {
-        console.error("Error cargando inventario:", error);
-        tablaInventario.innerHTML = '<tr><td colspan="2" class="empty-cell">No se pudo cargar el inventario.</td></tr>';
-        toast("Hubo un error al cargar el inventario.", "error");
     }
+
+    return getDocs(query(collection(db, "inventario"), orderBy("nombreNorm", "asc")))
+        .then((snapshot) => {
+            inventarioCache = [];
+            snapshot.forEach((docSnap) => {
+                inventarioCache.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            guardarCache(CACHE_INVENTARIO, inventarioCache);
+            renderInventario();
+        })
+        .catch((error) => {
+            console.error("Error cargando inventario:", error);
+            if (inventarioCache.length === 0) {
+                tablaInventario.innerHTML = '<tr><td colspan="2" class="empty-cell">No se pudo cargar el inventario.</td></tr>';
+            }
+            toast("Hubo un error al cargar el inventario.", "error");
+        });
 }
 
 function renderInventario() {
@@ -192,6 +204,7 @@ async function eliminarProducto(id) {
     try {
         await deleteDoc(doc(db, "inventario", id));
         inventarioCache = inventarioCache.filter((p) => p.id !== id);
+        guardarCache(CACHE_INVENTARIO, inventarioCache);
         renderInventario();
         toast("Producto eliminado del inventario.");
     } catch (error) {
@@ -266,6 +279,7 @@ guardarProductoModal.addEventListener('click', () => {
             });
 
             inventarioCache.push({ id: ref.id, nombre, nombreNorm });
+            guardarCache(CACHE_INVENTARIO, inventarioCache);
             renderInventario();
             cerrarModalProductoHandler();
 

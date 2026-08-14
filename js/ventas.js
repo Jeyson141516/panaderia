@@ -1,7 +1,7 @@
 import { db } from './firebase-config.js';
 import { collection, addDoc, getDocs, serverTimestamp, query, where, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
-import { normalizarTexto, limpiarTexto, validarEntero, validarMonto, validarTelefono, ejecutarConBotonBloqueado } from './utils.js';
+import { normalizarTexto, limpiarTexto, validarEntero, validarMonto, validarTelefono, ejecutarConBotonBloqueado, leerCache, guardarCache } from './utils.js';
 
 const PRECIO_FUNDA = 1.00;
 
@@ -181,7 +181,7 @@ async function cargarSaldos() {
 
 async function cargarVentasDelDia() {
     try {
-        const { dia, anio, mes, diaNum, inicio, fin } = rangoDiaConsultado();
+        const { anio, mes, diaNum, inicio, fin } = rangoDiaConsultado();
         ventasDiaTitulo.textContent = `Ventas del Día (${formatearFechaLocal(inicio)})`;
 
         const [querySnapshot] = await Promise.all([
@@ -215,10 +215,6 @@ async function cargarVentasDelDia() {
                 hora: fecha ? formatearHora(fecha) : "--:--"
             });
         });
-
-        // Depuración temporal: confirma en la consola del navegador cuántas
-        // ventas llegaron para la fecha seleccionada.
-        console.log(`[ventas] Día ${dia}: ${ventasDiaCache.length} venta(s) encontrada(s) para la fecha seleccionada.`);
 
         renderVentasDia();
     } catch (error) {
@@ -298,22 +294,37 @@ let clientesCache = [];
 let indiceActivo = -1;
 let clientesPromise = null;
 
+const CACHE_CLIENTES = 'clientes';
+const TTL_CLIENTES_MS = 30 * 60 * 1000;
+
 function cargarClientes() {
     if (!clientesPromise) {
-        clientesPromise = getDocs(collection(db, "clientes")).then((querySnapshot) => {
-            clientesCache = querySnapshot.docs
-                .map((docSnap) => {
-                    const nombre = String(docSnap.data().nombre || "").trim();
-                    return {
-                        id: docSnap.id,
-                        nombre,
-                        nombreNorm: normalizarTexto(nombre)
-                    };
-                })
-                .filter((c) => c.nombre.length > 0);
+        // Sirve la lista guardada al instante (autocompletado inmediato)
+        // mientras se refresca en segundo plano desde Firestore.
+        const cacheado = leerCache(CACHE_CLIENTES, TTL_CLIENTES_MS);
+        if (cacheado) clientesCache = cacheado;
 
-            clientesCache.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-        });
+        clientesPromise = getDocs(collection(db, "clientes"))
+            .then((querySnapshot) => {
+                clientesCache = querySnapshot.docs
+                    .map((docSnap) => {
+                        const nombre = String(docSnap.data().nombre || "").trim();
+                        return {
+                            id: docSnap.id,
+                            nombre,
+                            nombreNorm: normalizarTexto(nombre)
+                        };
+                    })
+                    .filter((c) => c.nombre.length > 0);
+
+                clientesCache.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+                guardarCache(CACHE_CLIENTES, clientesCache);
+            })
+            .catch((error) => {
+                console.error("Error cargando clientes:", error);
+                clientesPromise = null; // permite reintentar en la próxima escritura
+                if (clientesCache.length === 0) throw error;
+            });
     }
     return clientesPromise;
 }
@@ -395,7 +406,11 @@ clienteBusqueda.addEventListener('input', async (e) => {
         return;
     }
 
-    await cargarClientes();
+    try {
+        await cargarClientes();
+    } catch (error) {
+        return; // sin lista local y sin red: no hay sugerencias disponibles
+    }
     buscarClientes(texto);
 
     clearTimeout(debounceSaldoTimer);
@@ -508,6 +523,7 @@ guardarClienteModal.addEventListener('click', () => {
 
             clientesCache.push({ id: ref.id, nombre, nombreNorm });
             clientesCache.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+            guardarCache(CACHE_CLIENTES, clientesCache);
 
             toast("¡Cliente guardado con éxito!");
             clienteBusqueda.value = nombre;

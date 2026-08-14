@@ -103,3 +103,44 @@ export function validarTelefono(valor) {
     if (limpio.length > 15) return "";
     return limpio;
 }
+
+/* ---------- Caché ligera en localStorage ---------- */
+
+const PREFIJO_CACHE = 'panaderia-cache:';
+
+/**
+ * Lee un valor cacheado en localStorage con vigencia limitada.
+ * Sirve para datos casi estáticos (catálogos, listas de referencia)
+ * y evita repetir consultas a la red en cada navegación.
+ * @param {string} clave Identificador del dato (se prefija automáticamente).
+ * @param {number} ttlMs Vigencia máxima en milisegundos.
+ * @returns {Array|null} Datos guardados o null si no hay o caducó.
+ */
+export function leerCache(clave, ttlMs) {
+    try {
+        const crudo = localStorage.getItem(PREFIJO_CACHE + clave);
+        if (!crudo) return null;
+        const registro = JSON.parse(crudo);
+        if (!registro || !Array.isArray(registro.datos) || !registro.tiempo) return null;
+        if (ttlMs && Date.now() - registro.tiempo > ttlMs) return null;
+        return registro.datos;
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
+ * Guarda un valor en la caché de localStorage.
+ * @param {string} clave
+ * @param {Array} datos
+ */
+export function guardarCache(clave, datos) {
+    try {
+        localStorage.setItem(PREFIJO_CACHE + clave, JSON.stringify({
+            tiempo: Date.now(),
+            datos
+        }));
+    } catch (e) {
+        // cuota llena o almacenamiento no disponible: se ignora
+    }
+}
