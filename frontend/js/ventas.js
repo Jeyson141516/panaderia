@@ -31,32 +31,34 @@ const nuevoTelefonoInput = document.getElementById('nuevoTelefono');
 const tablaVentasPagado = document.getElementById('tablaVentasPagado');
 const tablaVentasDebe = document.getElementById('tablaVentasDebe');
 const buscadorVentasDia = document.getElementById('buscadorVentasDia');
+const fechaFiltroDia = document.getElementById('fechaFiltroDia');
 const ventasDiaCache = [];
 let saldosMap = {};
 let saldosNormMap = {};
-
-const ETIQUETAS_PERIODO = { "0": "Hoy", "-1": "Ayer", "-2": "Antes de ayer" };
 
 function offsetDiasSeleccionado() {
     return parseInt(fechaVentaSelect.value, 10) || 0;
 }
 
-function fechaInicioPeriodo() {
-    const d = new Date();
-    d.setDate(d.getDate() + offsetDiasSeleccionado());
-    d.setHours(0, 0, 0, 0);
-    return d;
+function fechaHoyLocal() {
+    const hoy = new Date();
+    return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
 }
 
-function fechaFinPeriodo() {
-    const d = new Date();
-    d.setDate(d.getDate() + offsetDiasSeleccionado());
-    d.setHours(23, 59, 59, 999);
-    return d;
+function formatearFechaLocal(fecha) {
+    const d = fecha instanceof Date ? fecha : new Date(fecha);
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 }
 
-function etiquetaPeriodo() {
-    return ETIQUETAS_PERIODO[fechaVentaSelect.value] || "Hoy";
+function rangoDiaConsultado() {
+    const dia = fechaFiltroDia.value || fechaHoyLocal();
+    const [anio, mes, diaNum] = dia.split('-').map(Number);
+    // Límites en hora LOCAL: 00:00:00.000 a 23:59:59.999 del día seleccionado.
+    // El SDK de Firestore convierte estas fechas a su instante UTC equivalente,
+    // por lo que el rango coincide con las marcas de tiempo guardadas (Timestamps).
+    const inicio = new Date(anio, mes - 1, diaNum, 0, 0, 0, 0);
+    const fin = new Date(anio, mes - 1, diaNum, 23, 59, 59, 999);
+    return { dia, anio, mes: mes - 1, diaNum, inicio, fin };
 }
 
 function formatearMoneda(valor) {
@@ -179,10 +181,8 @@ async function cargarSaldos() {
 
 async function cargarVentasDelDia() {
     try {
-        const inicio = fechaInicioPeriodo();
-        const fin = fechaFinPeriodo();
-
-        ventasDiaTitulo.textContent = `Ventas del Día (${etiquetaPeriodo()})`;
+        const { dia, anio, mes, diaNum, inicio, fin } = rangoDiaConsultado();
+        ventasDiaTitulo.textContent = `Ventas del Día (${formatearFechaLocal(inicio)})`;
 
         const [querySnapshot] = await Promise.all([
             getDocs(
@@ -198,14 +198,27 @@ async function cargarVentasDelDia() {
 
         querySnapshot.forEach((docSnap) => {
             const v = docSnap.data();
+            const fecha = v.fecha && v.fecha.toDate ? v.fecha.toDate() : null;
+
+            // Filtro de seguridad anti desfase horario: se valida el año, mes y
+            // día LOCALES del Timestamp guardado en Firestore, descartando
+            // cualquier documento que el rango de servidor haya incluido por borde.
+            if (fecha && (fecha.getFullYear() !== anio || fecha.getMonth() !== mes || fecha.getDate() !== diaNum)) {
+                return;
+            }
+
             ventasDiaCache.push({
                 cliente: v.cliente || "Cliente General",
                 cantidad: Number(v.cantidadFundas) || 0,
                 total: Number(v.totalVenta) || 0,
                 estado: v.estadoPago || "pagado",
-                hora: v.fecha && v.fecha.toDate ? formatearHora(v.fecha.toDate()) : "--:--"
+                hora: fecha ? formatearHora(fecha) : "--:--"
             });
         });
+
+        // Depuración temporal: confirma en la consola del navegador cuántas
+        // ventas llegaron para la fecha seleccionada.
+        console.log(`[ventas] Día ${dia}: ${ventasDiaCache.length} venta(s) encontrada(s) para la fecha seleccionada.`);
 
         renderVentasDia();
     } catch (error) {
@@ -245,8 +258,21 @@ montoAbonoInput.addEventListener('input', actualizarTotalAbono);
 
 estadoPagoSelect.addEventListener('change', actualizarFormularioAbono);
 
-fechaVentaSelect.addEventListener('change', () => {
-    ventasDiaTitulo.textContent = `Ventas del Día (${etiquetaPeriodo()})`;
+const CLAVE_DIA_CONSULTA = 'panaderia-dia-consulta';
+
+function restaurarDiaConsultado() {
+    const guardado = localStorage.getItem(CLAVE_DIA_CONSULTA);
+    const valido = guardado && /^\d{4}-\d{2}-\d{2}$/.test(guardado);
+    fechaFiltroDia.value = valido ? guardado : fechaHoyLocal();
+}
+
+fechaFiltroDia.addEventListener('change', () => {
+    // Solo se toca el valor cuando el campo quedó vacío (fallback a hoy).
+    // Una fecha elegida por el usuario se conserva tal cual y se persiste.
+    if (!fechaFiltroDia.value) {
+        fechaFiltroDia.value = fechaHoyLocal();
+    }
+    localStorage.setItem(CLAVE_DIA_CONSULTA, fechaFiltroDia.value);
     cargarVentasDelDia();
 });
 
@@ -559,4 +585,5 @@ formVenta.addEventListener('submit', async (e) => {
     }
 });
 
+restaurarDiaConsultado();
 cargarVentasDelDia();
