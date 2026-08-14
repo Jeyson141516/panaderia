@@ -183,17 +183,6 @@ nav ul li a.active {
     box-shadow: inset 3px 0 0 var(--brand-1), var(--shadow-sm);
 }
 
-nav ul li a.danger-link {
-    color: #fca5a5;
-}
-
-nav ul li a.danger-link:hover,
-nav ul li a.danger-link.active {
-    background: rgba(239, 68, 68, .16);
-    border-color: rgba(239, 68, 68, .35);
-    color: #fecaca;
-}
-
 /* Pie de la barra: usuario + cerrar sesión */
 nav .nav-footer {
     margin-top: auto;
@@ -1216,25 +1205,6 @@ button:disabled {
 @keyframes toastOut {
     from { opacity: 1; }
     to   { opacity: 0; transform: translateX(24px); }
-}
-
-/* ============ Zona de Peligro (Limpiar BD) ============ */
-.danger-zone {
-    border: 2px dashed rgba(239, 68, 68, .45) !important;
-    max-width: 640px;
-}
-
-.danger-zone h3 {
-    color: var(--danger);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.status-line {
-    margin-top: 16px;
-    font-weight: 600;
-    font-size: 0.92rem;
 }
 
 /* ============ Página de Login ============ */

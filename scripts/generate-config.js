@@ -80,8 +80,6 @@ export const SESSION_TIMEOUT_MIN = 25;
 export const CORS_ALLOWED_ORIGINS = ["http://localhost:5500", "http://127.0.0.1:5500"];
 
 export const ADMIN_EMAILS = [];
-
-export const ADMIN_PIN = "1234";
 `;
 }
 
@@ -107,7 +105,6 @@ function principal() {
     const sessionTimeoutMin = entero(env, "SESSION_TIMEOUT_MIN", 25);
     const corsAllowedOrigins = lista(env, "CORS_ALLOWED_ORIGINS");
     const adminEmails = lista(env, "ADMIN_EMAILS");
-    const adminPin = extraer(env, "ADMIN_PIN");
 
     const json = (v) => JSON.stringify(v, null, 4);
 
@@ -124,8 +121,6 @@ export const SESSION_TIMEOUT_MIN = ${sessionTimeoutMin};
 export const CORS_ALLOWED_ORIGINS = ${json(corsAllowedOrigins)};
 
 export const ADMIN_EMAILS = ${json(adminEmails)};
-
-export const ADMIN_PIN = ${json(adminPin)};
 `;
 
     fs.writeFileSync(RUTA_CONFIG_JS, configJs, "utf8");

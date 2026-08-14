@@ -18,5 +18,3 @@ export const SESSION_TIMEOUT_MIN = 25;
 export const CORS_ALLOWED_ORIGINS = ["http://localhost:5500", "http://127.0.0.1:5500"];
 
 export const ADMIN_EMAILS = [];
-
-export const ADMIN_PIN = "1234";
