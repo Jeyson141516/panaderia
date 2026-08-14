@@ -65,50 +65,67 @@ function pintarDocumento() {
             `<tr><td>${index + 1}</td><td>${escapeHtml(cli)}</td><td class="num">${fundas} fundas</td></tr>`).join('')
         : '<tr><td colspan="3" class="sin-datos">Sin datos en el rango seleccionado.</td></tr>';
 
-    const claseUtilidad = r.utilidadNeta >= 0 ? 'utilidad' : 'utilidad negativa';
+    const ventasHtml = [
+        ['Ventas de Contado (Efectivo)', formatearMoneda(r.totalContado)],
+        ['Fiado / Crédito', formatearMoneda(r.totalCredito)],
+        ['Abonos recibidos', formatearMoneda(r.totalAbonos)],
+        ['Pendiente de cobro', formatearMoneda(r.totalPendiente)],
+        ['Total Facturado', formatearMoneda(r.totalFacturado)],
+        ['Fundas vendidas', `${r.totalFundas} fundas`]
+    ].map(([concepto, valor]) =>
+        `<tr><td>${concepto}</td><td class="num">${valor}</td></tr>`).join('');
+
+    const fechaGeneracion = new Date().toLocaleString('es-EC');
 
     reporteDocumento.innerHTML = `
-        <h1>Reporte Financiero</h1>
-        <p class="org">Panadería Familiar</p>
-        <p class="meta">Período: ${etiquetaPeriodo(r.periodo)} · Desde ${r.fechaInicio || 'inicio'} hasta ${r.fechaFin || 'hoy'} · Estado: ${etiquetaEstado(r.estado)}</p>
+        <header class="membrete">
+            <div>
+                <div class="negocio">Panadería Familiar</div>
+                <div class="subtitulo">Documento Financiero</div>
+            </div>
+            <div class="titulo-doc">Reporte de Ventas y Finanzas</div>
+        </header>
 
-        <h2>Resumen Financiero</h2>
-        <div class="resumen-grid">
-            <div class="caja"><span class="lbl">Ventas de Contado (Efectivo)</span><span class="val">${formatearMoneda(r.ingresosContado)}</span></div>
-            <div class="caja"><span class="lbl">Gastos (Insumos)</span><span class="val">${formatearMoneda(r.totalGastos)}</span></div>
-            <div class="caja"><span class="lbl">Total a Pagar a Personal</span><span class="val">${formatearMoneda(r.totalAPagar)}</span></div>
-            <div class="caja"><span class="lbl">Adelantos (Salida de Caja)</span><span class="val">${formatearMoneda(r.totalAdelantos)}</span></div>
-            <div class="caja ${claseUtilidad}"><span class="lbl">Utilidad Neta</span><span class="val">${formatearMoneda(r.utilidadNeta)}</span></div>
+        <div class="meta">
+            <span>Período: <b>${etiquetaPeriodo(r.periodo)}</b> · Del <b>${r.fechaInicio || 'inicio'}</b> al <b>${r.fechaFin || 'hoy'}</b> · Estado: <b>${etiquetaEstado(r.estado)}</b></span>
+            <span class="fecha">Generado: ${fechaGeneracion}</span>
         </div>
-        <p class="nota">Utilidad = Ventas de Contado − Gastos (Insumos) − Total Adelantos Entregados.<br>
-            Los fiados y abonos no alteran esta fórmula: se basa en el efectivo real que entró y salió de caja.<br>
-            Detalle Personal — Salario Total: <b>${formatearMoneda(r.totalPagosPersonal)}</b> · Adelantos (salida de efectivo real): <b>${formatearMoneda(r.totalAdelantos)}</b></p>
 
-        <h2>Pagos por Trabajador</h2>
+        <h2 class="seccion">Resumen Financiero</h2>
+        <table>
+            <thead><tr><th>Concepto</th><th class="num">Valor</th></tr></thead>
+            <tbody>
+                <tr><td>Ventas de Contado (Efectivo)</td><td class="num">${formatearMoneda(r.ingresosContado)}</td></tr>
+                <tr><td>Gastos (Insumos)</td><td class="num">${formatearMoneda(r.totalGastos)}</td></tr>
+                <tr><td>Total a Pagar a Personal</td><td class="num">${formatearMoneda(r.totalAPagar)}</td></tr>
+                <tr><td>Adelantos (Salida de Caja)</td><td class="num">${formatearMoneda(r.totalAdelantos)}</td></tr>
+                <tr class="fila-total"><td>Utilidad Neta</td><td class="num">${formatearMoneda(r.utilidadNeta)}</td></tr>
+            </tbody>
+        </table>
+        <p class="nota">Nota: Utilidad = Ventas de Contado − Gastos (Insumos) − Total Adelantos Entregados. Los fiados y abonos no alteran esta fórmula (efectivo real de caja). Detalle Personal — Salario Total: <b>${formatearMoneda(r.totalPagosPersonal)}</b> · Adelantos: <b>${formatearMoneda(r.totalAdelantos)}</b></p>
+
+        <h2 class="seccion">Pagos por Trabajador</h2>
         <table>
             <thead><tr><th>Trabajador</th><th class="num">Salario Total</th><th class="num">Adelantos</th><th class="num">Total a Pagar</th></tr></thead>
             <tbody>${pagosHtml}</tbody>
         </table>
 
-        <h2>Detalle de Ventas</h2>
+        <h2 class="seccion">Detalle de Ventas</h2>
         <table>
-            <tbody>
-                <tr><td>Ventas de Contado (Efectivo)</td><td class="num">${formatearMoneda(r.totalContado)}</td></tr>
-                <tr><td>Fiado / Crédito</td><td class="num">${formatearMoneda(r.totalCredito)}</td></tr>
-                <tr><td>Abonos recibidos</td><td class="num">${formatearMoneda(r.totalAbonos)}</td></tr>
-                <tr><td>Pendiente de cobro</td><td class="num">${formatearMoneda(r.totalPendiente)}</td></tr>
-                <tr><td>Total Facturado</td><td class="num">${formatearMoneda(r.totalFacturado)}</td></tr>
-                <tr><td>Fundas vendidas</td><td class="num">${r.totalFundas} fundas</td></tr>
-            </tbody>
+            <thead><tr><th>Concepto</th><th class="num">Total</th></tr></thead>
+            <tbody>${ventasHtml}</tbody>
         </table>
 
-        <h2>Mejores Clientes</h2>
+        <h2 class="seccion">Mejores Clientes</h2>
         <table>
             <thead><tr><th>#</th><th>Cliente</th><th class="num">Fundas</th></tr></thead>
             <tbody>${clientesHtml}</tbody>
         </table>
 
-        <p class="pie">Documento generado el ${new Date().toLocaleString('es-EC')} · Panadería Familiar</p>
+        <footer class="pie">
+            <span>Panadería Familiar · Reporte de Ventas y Finanzas</span>
+            <span>Página 1 de 1</span>
+        </footer>
     `;
 
     return r;
@@ -150,125 +167,138 @@ function descargarPdf() {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-    const MARGEN = 20;
-    const ANCHO = 170;
+    const MARGEN = 18;
+    const ANCHO = 174;
     const LIMITE = 282;
-    const NEGRO = [15, 23, 42];
-    const GRIS = [100, 116, 139];
-    const GRIS_SUAVE = [156, 163, 175];
-    const LINEA = [209, 213, 219];
-    const RELLENO = [243, 244, 246];
-    let y = 26;
+    const NEGRO = [0, 0, 0];
+    const GRIS = [70, 70, 70];
+    const GRIS_SUAVE = [110, 110, 110];
+    const CABECERA = [236, 238, 241];
+    let y = 20;
 
     function avanza(alto) {
         y += alto;
         if (y > LIMITE) {
             pdf.addPage();
-            y = 26;
+            y = 20;
         }
     }
 
     function encabezadoSeccion(titulo) {
-        avanza(6);
+        avanza(6.5);
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(9);
-        pdf.setTextColor(...GRIS);
+        pdf.setTextColor(...NEGRO);
         pdf.text(String(titulo).toUpperCase(), MARGEN, y);
-        y += 2.6;
-        pdf.setDrawColor(...LINEA);
-        pdf.setLineWidth(0.4);
+        y += 2.4;
+        pdf.setDrawColor(...NEGRO);
+        pdf.setLineWidth(0.5);
         pdf.line(MARGEN, y, MARGEN + ANCHO, y);
-        avanza(7);
+        y += 4;
     }
 
     function textoFlujo(texto, opciones = {}) {
-        const { size = 9, estilo = 'normal', color = NEGRO, maxAncho = ANCHO } = opciones;
+        const { size = 8, estilo = 'normal', color = NEGRO, maxAncho = ANCHO } = opciones;
         pdf.setFont('helvetica', estilo);
         pdf.setFontSize(size);
         pdf.setTextColor(...color);
         pdf.splitTextToSize(String(texto), maxAncho).forEach((linea) => {
             if (y > LIMITE) {
                 pdf.addPage();
-                y = 26;
+                y = 20;
             }
             pdf.text(linea, MARGEN, y);
-            y += size / 3 + 1.4;
+            y += size / 3 + 1.2;
         });
     }
 
     function tabla(columnas, filas, opciones = {}) {
         const anchos = opciones.anchos || [];
         const alinear = opciones.alinear || [];
-        const filaAlto = 7.2;
+        const altoCabecera = 6;
+        const altoFila = 5.6;
+        const destacarUltima = opciones.destacarUltima === true;
 
-        function dibujarEncabezado() {
-            pdf.setFillColor(...RELLENO);
-            pdf.rect(MARGEN, y, ANCHO, filaAlto, 'F');
-            pdf.setFont('helvetica', 'bold');
-            pdf.setFontSize(7.5);
-            pdf.setTextColor(...GRIS);
-            let x = MARGEN;
-            columnas.forEach((titulo, i) => {
-                const ancho = anchos[i] || ANCHO / columnas.length;
-                if (alinear[i] === 'right') {
-                    pdf.text(String(titulo).toUpperCase(), x + ancho, y + 4.8, { align: 'right' });
-                } else {
-                    pdf.text(String(titulo).toUpperCase(), x + 1.5, y + 4.8);
-                }
-                x += ancho;
-            });
-            y += filaAlto;
-        }
-
-        if (y + filaAlto > LIMITE) {
-            pdf.addPage();
-            y = 26;
-        }
-        dibujarEncabezado();
-
-        filas.forEach((fila) => {
-            if (y + filaAlto > LIMITE) {
-                pdf.addPage();
-                y = 26;
-                dibujarEncabezado();
+        function dibujarFila(fila, yRow, alto, { relleno = false, superior = 0.3, inferior = 0.3, estilo = 'normal' } = {}) {
+            if (relleno) {
+                pdf.setFillColor(...CABECERA);
+                pdf.rect(MARGEN, yRow, ANCHO, alto, 'F');
             }
-            pdf.setFont('helvetica', 'normal');
-            pdf.setFontSize(9);
+            pdf.setDrawColor(...NEGRO);
+            pdf.setLineWidth(superior);
+            pdf.line(MARGEN, yRow, MARGEN + ANCHO, yRow);
+            pdf.setLineWidth(inferior);
+            pdf.line(MARGEN, yRow + alto, MARGEN + ANCHO, yRow + alto);
+            pdf.setFont('helvetica', estilo);
+            pdf.setFontSize(estilo === 'bold' ? 7.5 : 8.5);
             pdf.setTextColor(...NEGRO);
-            let xf = MARGEN;
+            let x = MARGEN;
             fila.forEach((celda, i) => {
                 const ancho = anchos[i] || ANCHO / columnas.length;
                 const linea = pdf.splitTextToSize(String(celda), ancho - 3)[0] || '';
                 if (alinear[i] === 'right') {
-                    pdf.text(linea, xf + ancho, y + 4.6, { align: 'right' });
+                    pdf.text(linea, x + ancho - 1.5, yRow + 4, { align: 'right' });
                 } else {
-                    pdf.text(linea, xf + 1.5, y + 4.6);
+                    pdf.text(linea, x + 1.5, yRow + 4);
                 }
-                xf += ancho;
+                x += ancho;
             });
-            pdf.setDrawColor(...LINEA);
-            pdf.setLineWidth(0.2);
-            pdf.line(MARGEN, y + filaAlto, MARGEN + ANCHO, y + filaAlto);
-            y += filaAlto;
+        }
+
+        if (y + altoCabecera > LIMITE) {
+            pdf.addPage();
+            y = 20;
+        }
+        dibujarFila(columnas, y, altoCabecera, { relleno: true, superior: 0.6, inferior: 0.6, estilo: 'bold' });
+        y += altoCabecera;
+
+        filas.forEach((fila, idx) => {
+            if (y + altoFila > LIMITE) {
+                pdf.addPage();
+                y = 20;
+                dibujarFila(columnas, y, altoCabecera, { relleno: true, superior: 0.6, inferior: 0.6, estilo: 'bold' });
+                y += altoCabecera;
+            }
+            const esUltima = destacarUltima && idx === filas.length - 1;
+            dibujarFila(fila, y, altoFila, {
+                superior: esUltima ? 1 : 0.3,
+                estilo: esUltima ? 'bold' : 'normal'
+            });
+            y += altoFila;
         });
-        y += 3;
+        y += 2;
     }
 
-    /* ---------- Encabezado del documento ---------- */
+    /* ---------- Cabecera corporativa ---------- */
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(20);
+    pdf.setFontSize(16);
     pdf.setTextColor(...NEGRO);
-    pdf.text('Reporte Financiero', MARGEN, y);
-    avanza(7);
-    textoFlujo('Panadería Familiar', { size: 10, color: GRIS });
-    textoFlujo(`Período: ${etiquetaPeriodo(r.periodo)}  ·  Desde ${r.fechaInicio || 'inicio'} hasta ${r.fechaFin || 'hoy'}  ·  Estado: ${etiquetaEstado(r.estado)}`, { size: 8.5, color: GRIS });
-    y += 2;
-    pdf.setDrawColor(...LINEA);
-    pdf.setLineWidth(0.6);
-    pdf.line(MARGEN, y, MARGEN + ANCHO, y);
-    avanza(4);
+    pdf.text('Panadería Familiar', MARGEN, y);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8);
+    pdf.setTextColor(...GRIS);
+    pdf.text('Documento Financiero', MARGEN, y + 5.2);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(14);
+    pdf.setTextColor(...NEGRO);
+    pdf.text('Reporte de Ventas y Finanzas', MARGEN + ANCHO, y + 0.8, { align: 'right' });
 
-    /* ---------- Resumen Financiero ---------- */
+    /* Línea divisoria sólida */
+    y += 10;
+    pdf.setDrawColor(...NEGRO);
+    pdf.setLineWidth(1.1);
+    pdf.line(MARGEN, y, MARGEN + ANCHO, y);
+    y += 5;
+
+    /* ---------- Metadatos ---------- */
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8);
+    pdf.setTextColor(...GRIS);
+    pdf.text(`Período: ${etiquetaPeriodo(r.periodo)}  ·  Del ${r.fechaInicio || 'inicio'} al ${r.fechaFin || 'hoy'}  ·  Estado: ${etiquetaEstado(r.estado)}`, MARGEN, y);
+    pdf.text(`Generado: ${new Date().toLocaleString('es-EC')}`, MARGEN + ANCHO, y, { align: 'right' });
+    y += 6;
+
+    /* ---------- Resumen Financiero (tabla clásica de 2 columnas) ---------- */
     encabezadoSeccion('Resumen Financiero');
     const itemsResumen = [
         ['Ventas de Contado (Efectivo)', formatearMoneda(r.ingresosContado)],
@@ -277,29 +307,15 @@ function descargarPdf() {
         ['Adelantos (Salida de Caja)', formatearMoneda(r.totalAdelantos)],
         ['Utilidad Neta', formatearMoneda(r.utilidadNeta)]
     ];
-    const gap = 3;
-    const boxAncho = (ANCHO - gap * 4) / 5;
-    itemsResumen.forEach(([etiqueta, valor], i) => {
-        const x = MARGEN + i * (boxAncho + gap);
-        pdf.setFillColor(...RELLENO);
-        pdf.roundedRect(x, y, boxAncho, 18, 1.5, 1.5, 'F');
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(6.5);
-        pdf.setTextColor(...GRIS);
-        pdf.splitTextToSize(etiqueta.toUpperCase(), boxAncho - 4).slice(0, 2).forEach((ln, k) => {
-            pdf.text(ln, x + 2, y + 5 + k * 3);
-        });
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(11);
-        pdf.setTextColor(...NEGRO);
-        pdf.text(valor, x + boxAncho / 2, y + 13.5, { align: 'center' });
-    });
-    avanza(22);
+    tabla(
+        ['Concepto', 'Valor'],
+        itemsResumen,
+        { anchos: [100, 74], alinear: ['left', 'right'], destacarUltima: true }
+    );
 
-    const nota = `Utilidad = Ventas de Contado − Gastos (Insumos) − Total Adelantos Entregados.\n` +
-        `Los fiados y abonos no alteran esta fórmula: se basa en el efectivo real que entró y salió de caja.\n` +
-        `Detalle Personal — Salario Total: ${formatearMoneda(r.totalPagosPersonal)}  ·  Adelantos (salida de efectivo real): ${formatearMoneda(r.totalAdelantos)}`;
-    textoFlujo(nota, { size: 8, color: GRIS });
+    textoFlujo(`Nota: Utilidad = Ventas de Contado − Gastos (Insumos) − Total Adelantos Entregados. ` +
+        `Los fiados y abonos no alteran esta fórmula (efectivo real de caja). ` +
+        `Detalle Personal — Salario Total: ${formatearMoneda(r.totalPagosPersonal)}  ·  Adelantos: ${formatearMoneda(r.totalAdelantos)}`, { size: 7.5, color: GRIS });
 
     /* ---------- Pagos por Trabajador ---------- */
     encabezadoSeccion('Pagos por Trabajador');
@@ -314,7 +330,7 @@ function descargarPdf() {
     tabla(
         ['Trabajador', 'Salario Total', 'Adelantos', 'Total a Pagar'],
         pagosFilas,
-        { anchos: [86, 28, 28, 28], alinear: ['left', 'right', 'right', 'right'] }
+        { anchos: [86, 30, 28, 30], alinear: ['left', 'right', 'right', 'right'] }
     );
 
     /* ---------- Detalle de Ventas ---------- */
@@ -330,7 +346,7 @@ function descargarPdf() {
     tabla(
         ['Concepto', 'Total'],
         ventasFilas,
-        { anchos: [100, 70], alinear: ['left', 'right'] }
+        { anchos: [100, 74], alinear: ['left', 'right'] }
     );
 
     /* ---------- Mejores Clientes ---------- */
@@ -341,20 +357,18 @@ function descargarPdf() {
     tabla(
         ['#', 'Cliente', 'Fundas'],
         clientesFilas,
-        { anchos: [15, 110, 45], alinear: ['left', 'left', 'right'] }
+        { anchos: [14, 112, 48], alinear: ['left', 'left', 'right'] }
     );
 
     /* ---------- Pie y numeración ---------- */
-    textoFlujo(`Documento generado el ${new Date().toLocaleString('es-EC')} · Panadería Familiar`, { size: 8, color: GRIS_SUAVE });
-
     const totalPaginas = pdf.internal.getNumberOfPages();
     for (let i = 1; i <= totalPaginas; i++) {
         pdf.setPage(i);
         pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(7.5);
+        pdf.setFontSize(8);
         pdf.setTextColor(...GRIS_SUAVE);
+        pdf.text('Panadería Familiar · Reporte de Ventas y Finanzas', MARGEN, 290);
         pdf.text(`Página ${i} de ${totalPaginas}`, 210 - MARGEN, 290, { align: 'right' });
-        pdf.text('Panadería Familiar', MARGEN, 290);
     }
 
     const nombreArchivo = `reporte-panaderia-${r.fechaInicio || 'inicio'}-a-${r.fechaFin || 'hoy'}.pdf`;
