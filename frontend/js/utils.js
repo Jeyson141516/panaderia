@@ -61,6 +61,43 @@ export function validarMonto(valor, min = 0.01, max = 1000000) {
  * @param {string} valor
  * @returns {string}
  */
+/**
+ * Ejecuta un callback asíncrono bloqueando el botón durante la petición
+ * para evitar dobles envíos. El botón se restaura siempre (éxito o error)
+ * gracias a un bloque try/finally.
+ * @param {HTMLButtonElement} boton Botón a bloquear temporalmente.
+ * @param {() => Promise<any>} callbackAsincrono Operación a ejecutar (ej. guardar en Firestore).
+ * @param {string} textoCargando Texto/icono mostrado mientras se procesa.
+ * @returns {Promise<void>}
+ */
+export async function ejecutarConBotonBloqueado(boton, callbackAsincrono, textoCargando = "Procesando...") {
+    if (!boton) {
+        await callbackAsincrono();
+        return;
+    }
+
+    const estadoOriginal = {
+        disabled: boton.disabled,
+        innerHTML: boton.innerHTML,
+        cursor: boton.style.cursor,
+        opacity: boton.style.opacity
+    };
+
+    boton.disabled = true;
+    boton.style.cursor = "not-allowed";
+    boton.style.opacity = "0.65";
+    boton.innerHTML = `⏳ ${textoCargando}`;
+
+    try {
+        await callbackAsincrono();
+    } finally {
+        boton.disabled = estadoOriginal.disabled;
+        boton.style.cursor = estadoOriginal.cursor;
+        boton.style.opacity = estadoOriginal.opacity;
+        boton.innerHTML = estadoOriginal.innerHTML;
+    }
+}
+
 export function validarTelefono(valor) {
     const limpio = limpiarTexto(valor, 20).replace(/[^0-9+]/g, "");
     if (limpio.length > 15) return "";

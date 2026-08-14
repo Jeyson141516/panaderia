@@ -86,6 +86,9 @@ service cloud.firestore {
     }
 
     // --- Inventario de productos ---
+    // Se permite update/delete a cualquier usuario autenticado porque la app
+    // es de uso interno (una sola panadería). Los borrados se hacen desde
+    // el modal de inventario (inventario.js -> eliminarProducto).
     match /inventario/{document} {
       allow read: if isSignedIn();
 
@@ -93,7 +96,7 @@ service cloud.firestore {
         && esTexto(request.resource.data.nombre, 80)
         && esTexto(request.resource.data.nombreNorm, 80);
 
-      allow update, delete: if isAdmin();
+      allow update, delete: if isSignedIn();
     }
 
     // --- Adelantos y pagos de personal ---

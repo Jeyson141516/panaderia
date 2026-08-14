@@ -1,7 +1,7 @@
 import { db } from './firebase-config.js';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
-import { normalizarTexto, limpiarTexto, validarMonto } from './utils.js';
+import { normalizarTexto, limpiarTexto, validarMonto, ejecutarConBotonBloqueado } from './utils.js';
 
 const formGasto = document.getElementById('formGasto');
 const tablaGastos = document.getElementById('tablaGastos');
@@ -39,48 +39,50 @@ function formatearFecha(fecha) {
 
 /* ============ Gastos de producción ============ */
 
-formGasto.addEventListener('submit', async (e) => {
+formGasto.addEventListener('submit', (e) => {
     e.preventDefault();
 
-    let producto = productoSeleccionado;
+    ejecutarConBotonBloqueado(e.submitter, async () => {
+        let producto = productoSeleccionado;
 
-    if (!producto) {
-        const texto = productoBusqueda.value.trim();
-        if (texto) {
-            const norm = normalizarTexto(texto);
-            producto = inventarioCache.find((p) => p.nombreNorm === norm) || null;
+        if (!producto) {
+            const texto = productoBusqueda.value.trim();
+            if (texto) {
+                const norm = normalizarTexto(texto);
+                producto = inventarioCache.find((p) => p.nombreNorm === norm) || null;
+            }
         }
-    }
 
-    if (!producto) {
-        toast("Selecciona un producto de la lista o créalo con '+ Nuevo'.", "warning");
-        return;
-    }
+        if (!producto) {
+            toast("Selecciona un producto de la lista o créalo con '+ Nuevo'.", "warning");
+            return;
+        }
 
-    const monto = validarMonto(document.getElementById('monto').value, 0.01, 1000000);
+        const monto = validarMonto(document.getElementById('monto').value, 0.01, 1000000);
 
-    if (monto === null) {
-        toast("Ingresa un monto válido mayor a 0.", "warning");
-        return;
-    }
+        if (monto === null) {
+            toast("Ingresa un monto válido mayor a 0.", "warning");
+            return;
+        }
 
-    try {
-        await addDoc(collection(db, "gastos_inventario"), {
-            producto: producto.nombre,
-            productoNorm: producto.nombreNorm,
-            monto,
-            fecha: serverTimestamp()
-        });
+        try {
+            await addDoc(collection(db, "gastos_inventario"), {
+                producto: producto.nombre,
+                productoNorm: producto.nombreNorm,
+                monto,
+                fecha: serverTimestamp()
+            });
 
-        toast(`¡Gasto de ${monto.toFixed(2)} en ${producto.nombre} registrado!`);
-        formGasto.reset();
-        productoSeleccionado = null;
-        productoBusqueda.value = "";
-        cargarGastos();
-    } catch (error) {
-        console.error("Error al guardar gasto: ", error);
-        toast("Hubo un error al registrar el gasto.", "error");
-    }
+            toast(`¡Gasto de ${monto.toFixed(2)} en ${producto.nombre} registrado!`);
+            formGasto.reset();
+            productoSeleccionado = null;
+            productoBusqueda.value = "";
+            cargarGastos();
+        } catch (error) {
+            console.error("Error al guardar gasto: ", error);
+            toast("Hubo un error al registrar el gasto.", "error");
+        }
+    });
 });
 
 async function cargarGastos() {
@@ -204,43 +206,45 @@ function cerrarModalProductoHandler() {
     modalProducto.style.display = 'none';
 }
 
-guardarProductoModal.addEventListener('click', async () => {
-    const nombre = limpiarTexto(nuevoNombreProducto.value, 80);
+guardarProductoModal.addEventListener('click', () => {
+    ejecutarConBotonBloqueado(guardarProductoModal, async () => {
+        const nombre = limpiarTexto(nuevoNombreProducto.value, 80);
 
-    if (!nombre) {
-        toast("Escribe el nombre del producto.", "warning");
-        return;
-    }
+        if (!nombre) {
+            toast("Escribe el nombre del producto.", "warning");
+            return;
+        }
 
-    const nombreNorm = normalizarTexto(nombre);
-    const duplicado = inventarioCache.find((p) => p.nombreNorm === nombreNorm);
+        const nombreNorm = normalizarTexto(nombre);
+        const duplicado = inventarioCache.find((p) => p.nombreNorm === nombreNorm);
 
-    if (duplicado) {
-        productoBusqueda.value = duplicado.nombre;
-        cerrarModalProductoHandler();
-        toast(`Ya existe "${duplicado.nombre}" en el inventario.`, "warning");
-        return;
-    }
+        if (duplicado) {
+            productoBusqueda.value = duplicado.nombre;
+            cerrarModalProductoHandler();
+            toast(`Ya existe "${duplicado.nombre}" en el inventario.`, "warning");
+            return;
+        }
 
-    try {
-        const ref = await addDoc(collection(db, "inventario"), {
-            nombre,
-            nombreNorm,
-            fechaRegistro: serverTimestamp()
-        });
+        try {
+            const ref = await addDoc(collection(db, "inventario"), {
+                nombre,
+                nombreNorm,
+                fechaRegistro: serverTimestamp()
+            });
 
-        inventarioCache.push({ id: ref.id, nombre, nombreNorm });
-        renderInventario();
-        cerrarModalProductoHandler();
+            inventarioCache.push({ id: ref.id, nombre, nombreNorm });
+            renderInventario();
+            cerrarModalProductoHandler();
 
-        productoSeleccionado = { id: ref.id, nombre, nombreNorm };
-        productoBusqueda.value = nombre;
-        toast(`¡${nombre} agregado al inventario! Ahora registra su gasto.`);
-        document.getElementById('monto').focus();
-    } catch (error) {
-        console.error("Error al guardar producto: ", error);
-        toast("Hubo un error al guardar el producto.", "error");
-    }
+            productoSeleccionado = { id: ref.id, nombre, nombreNorm };
+            productoBusqueda.value = nombre;
+            toast(`¡${nombre} agregado al inventario! Ahora registra su gasto.`);
+            document.getElementById('monto').focus();
+        } catch (error) {
+            console.error("Error al guardar producto: ", error);
+            toast("Hubo un error al guardar el producto.", "error");
+        }
+    });
 });
 
 /* ============ Autocompletado de productos ============ */

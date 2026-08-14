@@ -501,10 +501,19 @@ input {
     touch-action: manipulation;
 }
 
-button:disabled {
+button:disabled,
+input[type="submit"]:disabled {
     opacity: .5;
     cursor: not-allowed;
     transform: none !important;
+    box-shadow: none;
+}
+
+button:disabled:hover,
+input[type="submit"]:disabled:hover {
+    filter: none;
+    box-shadow: none;
+    transform: none;
 }
 
 /* ============ Barra de Filtros (Reportes) ============ */

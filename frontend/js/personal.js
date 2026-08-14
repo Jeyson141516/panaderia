@@ -1,7 +1,7 @@
 import { db } from './firebase-config.js';
 import { collection, addDoc, getDocs, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
-import { limpiarTexto, validarMonto } from './utils.js';
+import { limpiarTexto, validarMonto, ejecutarConBotonBloqueado } from './utils.js';
 
 const TRABAJADORES = ["Patucho", "Lucho", "Flaquito"];
 const COL_ADELANTOS = "adelantos";
@@ -243,50 +243,52 @@ function renderReporteTabla(filtrados) {
     tablaReporte.innerHTML = filasMovimientosHTML(filtrados);
 }
 
-formMovimiento.addEventListener('submit', async (e) => {
+formMovimiento.addEventListener('submit', (e) => {
     e.preventDefault();
 
-    const trabajador = document.getElementById('trabajador').value;
-    const tipo = document.getElementById('tipoMovimiento').value;
-    const concepto = limpiarTexto(document.getElementById('concepto').value, 120);
-    const monto = validarMonto(document.getElementById('montoPersonal').value, 0.01, 1000000);
-    const dia = limpiarTexto(document.getElementById('diaMovimiento').value, 10);
+    ejecutarConBotonBloqueado(e.submitter, async () => {
+        const trabajador = document.getElementById('trabajador').value;
+        const tipo = document.getElementById('tipoMovimiento').value;
+        const concepto = limpiarTexto(document.getElementById('concepto').value, 120);
+        const monto = validarMonto(document.getElementById('montoPersonal').value, 0.01, 1000000);
+        const dia = limpiarTexto(document.getElementById('diaMovimiento').value, 10);
 
-    if (!TRABAJADORES.includes(trabajador)) {
-        toast("Selecciona un trabajador válido.", "warning");
-        return;
-    }
+        if (!TRABAJADORES.includes(trabajador)) {
+            toast("Selecciona un trabajador válido.", "warning");
+            return;
+        }
 
-    if (monto === null) {
-        toast("Ingresa un monto válido mayor a 0.", "warning");
-        return;
-    }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dia)) {
-        toast("Selecciona la fecha del movimiento.", "warning");
-        return;
-    }
+        if (monto === null) {
+            toast("Ingresa un monto válido mayor a 0.", "warning");
+            return;
+        }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dia)) {
+            toast("Selecciona la fecha del movimiento.", "warning");
+            return;
+        }
 
-    try {
-        const coleccion = tipo === "adelanto" ? COL_ADELANTOS : COL_PAGOS;
+        try {
+            const coleccion = tipo === "adelanto" ? COL_ADELANTOS : COL_PAGOS;
 
-        await addDoc(collection(db, coleccion), {
-            trabajador,
-            monto,
-            concepto: concepto || (tipo === "adelanto" ? "Adelanto" : "Pago de jornal"),
-            dia,
-            fecha: serverTimestamp()
-        });
+            await addDoc(collection(db, coleccion), {
+                trabajador,
+                monto,
+                concepto: concepto || (tipo === "adelanto" ? "Adelanto" : "Pago de jornal"),
+                dia,
+                fecha: serverTimestamp()
+            });
 
-        const etiqueta = tipo === "adelanto" ? "adelanto" : "pago";
-        toast(`¡${etiqueta} de $${monto.toFixed(2)} registrado para ${trabajador}!`);
+            const etiqueta = tipo === "adelanto" ? "adelanto" : "pago";
+            toast(`¡${etiqueta} de $${monto.toFixed(2)} registrado para ${trabajador}!`);
 
-        formMovimiento.reset();
-        document.getElementById('diaMovimiento').value = fechaHoy();
-        cargarMovimientos();
-    } catch (error) {
-        console.error("Error al guardar movimiento: ", error);
-        toast("Hubo un error al guardar el movimiento.", "error");
-    }
+            formMovimiento.reset();
+            document.getElementById('diaMovimiento').value = fechaHoy();
+            cargarMovimientos();
+        } catch (error) {
+            console.error("Error al guardar movimiento: ", error);
+            toast("Hubo un error al guardar el movimiento.", "error");
+        }
+    });
 });
 
 function imprimirReporte() {
