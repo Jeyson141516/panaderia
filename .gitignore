@@ -23,5 +23,5 @@ firestore.rules.backup
 !.env.example
 
 # Configuración generada (contiene datos de .env)
-#frontend/js/config.js
+
 backend/functions/.env
