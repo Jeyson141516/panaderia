@@ -1,0 +1,17 @@
+.area-impresion {
+    display: none;
+}
+
+@media print {
+    body > *:not(.area-impresion) {
+        display: none !important;
+    }
+
+    .area-impresion {
+        display: block !important;
+    }
+
+    body {
+        background: #fff !important;
+    }
+}

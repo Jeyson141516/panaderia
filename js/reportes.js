@@ -1,6 +1,8 @@
 import { db } from './firebase-config.js';
 import { collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
+import { renderizarReporteHtml } from './reporte-impresion-render.js';
+import { imprimirEnVistaActual } from './impresion.js';
 
 const btnConsultar = document.getElementById('btnConsultar');
 const btnPdf = document.getElementById('btnPdf');
@@ -508,6 +510,11 @@ function abrirVistaImpresion(accion) {
         localStorage.setItem('panaderia:reporte-actual', JSON.stringify(ultimoReporte));
     } catch (e) {
         toast("No se pudo guardar el reporte. Intenta de nuevo.", "error");
+        return;
+    }
+
+    if (accion === 'imprimir') {
+        imprimirEnVistaActual(renderizarReporteHtml(ultimoReporte));
         return;
     }
 

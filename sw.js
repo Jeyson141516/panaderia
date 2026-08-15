@@ -9,7 +9,7 @@
      como respaldo, para evitar peticiones repetidas.
    Al cambiar CACHE_VERSION se limpian las cachés antiguas.
    ============================================================ */
-const CACHE_VERSION = 'panaderia-v4';
+const CACHE_VERSION = 'panaderia-v5';
 const CACHE_RUNTIME = 'panaderia-runtime';
 
 const PRECACHE = [
@@ -22,6 +22,9 @@ const PRECACHE = [
     './personal-impresion.html',
     './login.html',
     './css/style.css',
+    './css/impresion-app.css',
+    './css/reporte-impresion.css',
+    './css/personal-impresion.css',
     './js/config.js',
     './js/firebase-config.js',
     './js/auth.js',
@@ -29,6 +32,7 @@ const PRECACHE = [
     './js/session.js',
     './js/utils.js',
     './js/ui.js',
+    './js/impresion.js',
     './js/login.js',
     './js/ventas.js',
     './js/inventario.js',
@@ -36,6 +40,8 @@ const PRECACHE = [
     './js/reportes.js',
     './js/reporte-impresion.js',
     './js/personal-impresion.js',
+    './js/reporte-impresion-render.js',
+    './js/personal-impresion-render.js',
     './img/icono.jpg'
 ];
 

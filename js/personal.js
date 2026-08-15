@@ -2,6 +2,8 @@ import { db } from './firebase-config.js';
 import { collection, addDoc, getDocs, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
 import { limpiarTexto, validarMonto, ejecutarConBotonBloqueado } from './utils.js';
+import { renderizarReportePersonalHtml } from './personal-impresion-render.js';
+import { imprimirEnVistaActual } from './impresion.js';
 
 const TRABAJADORES = ["Patucho", "Lucho", "Flaquito"];
 const COL_ADELANTOS = "adelantos";
@@ -341,6 +343,11 @@ function abrirVistaImpresionPersonal(accion) {
         localStorage.setItem(CLAVE_REPORTE_PERSONAL, JSON.stringify(reporte));
     } catch (error) {
         toast("No se pudo guardar el reporte. Intenta de nuevo.", "error");
+        return;
+    }
+
+    if (accion === 'imprimir') {
+        imprimirEnVistaActual(renderizarReportePersonalHtml(reporte));
         return;
     }
 
