@@ -854,6 +854,47 @@ input[type="submit"]:disabled:hover {
     margin-bottom: 14px;
 }
 
+/* Tarjeta del total general de gastos mostrados en la tabla */
+.total-gastos {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+    margin-bottom: 14px;
+    padding: 10px 18px;
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, .5);
+    flex-shrink: 0;
+}
+
+.total-gastos-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.total-gastos-monto {
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    color: var(--warning);
+    white-space: nowrap;
+}
+
+:root[data-theme="oscuro"] .total-gastos {
+    background: linear-gradient(135deg, rgba(245, 158, 11, .12), rgba(245, 158, 11, .04));
+    border-color: rgba(245, 158, 11, .28);
+}
+
+:root[data-theme="oscuro"] .total-gastos-monto {
+    text-shadow: 0 0 20px rgba(245, 158, 11, .3);
+}
+
 .ventas-dia-header {
     display: flex;
     align-items: center;

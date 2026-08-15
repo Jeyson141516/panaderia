@@ -7,6 +7,7 @@ const formGasto = document.getElementById('formGasto');
 const tablaGastos = document.getElementById('tablaGastos');
 const busquedaGasto = document.getElementById('busquedaGasto');
 const fechaFiltroGasto = document.getElementById('fechaFiltroGasto');
+const totalGastosEl = document.getElementById('totalGastos');
 
 const productoBusqueda = document.getElementById('productoBusqueda');
 const btnNuevoProducto = document.getElementById('btnNuevoProducto');
@@ -110,6 +111,7 @@ async function cargarGastos() {
         renderGastos();
     } catch (error) {
         console.error("Error cargando gastos:", error);
+        totalGastosEl.textContent = formatearMoneda(0);
         tablaGastos.innerHTML = '<tr><td colspan="3" class="empty-cell">No se pudo cargar el historial de gastos.</td></tr>';
     }
 }
@@ -124,14 +126,19 @@ function renderGastos() {
     });
 
     if (gastosCache.length === 0) {
+        totalGastosEl.textContent = formatearMoneda(0);
         tablaGastos.innerHTML = '<tr><td colspan="3" class="empty-cell">Aún no hay gastos registrados.</td></tr>';
         return;
     }
 
     if (filtrados.length === 0) {
+        totalGastosEl.textContent = formatearMoneda(0);
         tablaGastos.innerHTML = '<tr><td colspan="3" class="empty-cell">No hay gastos que coincidan con los filtros.</td></tr>';
         return;
     }
+
+    const total = filtrados.reduce((suma, g) => suma + (Number(g.monto) || 0), 0);
+    totalGastosEl.textContent = formatearMoneda(total);
 
     tablaGastos.innerHTML = filtrados.map((g) => `
         <tr>
