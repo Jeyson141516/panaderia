@@ -1,8 +1,8 @@
 /* ============================================================
    CONFIGURACIÓN GENERADA AUTOMÁTICAMENTE
-   Archivo producido por scripts/generate-config.js a partir de .env.
-   NO edites a mano: tus cambios se sobrescribirán con "npm run config".
-   Este archivo está excluido de git (.gitignore).
+   Archivo producido por scripts/generate-config.js a partir de .env
+   y/o process.env. NO edites a mano: tus cambios se sobrescribirán
+   con "npm run config". Este archivo está excluido de git (.gitignore).
    ============================================================ */
 export const FIREBASE_CONFIG = {
     "apiKey": "AIzaSyAXeVsuqLMEgzT2mmxCs4xgpiMHvjQxuiI",

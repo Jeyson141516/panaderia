@@ -1,7 +1,7 @@
 /* ============================================================
    Plantilla de configuración (valores de ejemplo).
-   El archivo REAL frontend/js/config.js se genera automáticamente
-   con "npm run config" a partir de .env y NO debe subirse a git.
+   El archivo REAL js/config.js se genera automáticamente
+   con "npm run config" a partir de .env / process.env y NO debe subirse a git.
    ============================================================ */
 export const FIREBASE_CONFIG = {
     apiKey: "TU_API_KEY",

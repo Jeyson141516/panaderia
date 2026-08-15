@@ -1,8 +1,9 @@
 /* ============================================================
    Generador de configuración — Panadería Familiar
    ------------------------------------------------------------
-   Lee .env (raíz) y genera:
-     1. frontend/js/config.js      -> config para el navegador
+   Lee las variables de entorno desde el archivo .env (local) y/o
+   desde process.env (Vercel) y genera:
+     1. js/config.js               -> config para el navegador
      2. backend/functions/.env     -> variables para las Cloud Functions
 
    Uso:  node scripts/generate-config.js
@@ -13,8 +14,8 @@ const path = require("path");
 
 const RAIZ = path.resolve(__dirname, "..");
 const RUTA_ENV = path.join(RAIZ, ".env");
-const RUTA_CONFIG_JS = path.join(RAIZ, "frontend", "js", "config.js");
-const RUTA_CONFIG_EXAMPLE = path.join(RAIZ, "frontend", "js", "config.example.js");
+const RUTA_CONFIG_JS = path.join(RAIZ, "js", "config.js");
+const RUTA_CONFIG_EXAMPLE = path.join(RAIZ, "js", "config.example.js");
 const RUTA_ENV_FUNCTIONS = path.join(RAIZ, "backend", "functions", ".env");
 
 const REQUERIDAS = [
@@ -62,8 +63,8 @@ function entero(vars, clave, defecto) {
 function generarConfigEjemplo() {
     return `/* ============================================================
    Plantilla de configuración (valores de ejemplo).
-   El archivo REAL frontend/js/config.js se genera automáticamente
-   con "npm run config" a partir de .env y NO debe subirse a git.
+   El archivo REAL js/config.js se genera automáticamente
+   con "npm run config" a partir de .env / process.env y NO debe subirse a git.
    ============================================================ */
 export const FIREBASE_CONFIG = {
     apiKey: "TU_API_KEY",
@@ -84,11 +85,24 @@ export const ADMIN_EMAILS = [];
 }
 
 function principal() {
-    const env = leerEnv(RUTA_ENV);
+    const envArchivo = leerEnv(RUTA_ENV);
+    const env = {
+        FIREBASE_API_KEY: process.env.FIREBASE_API_KEY || envArchivo.FIREBASE_API_KEY,
+        FIREBASE_AUTH_DOMAIN: process.env.FIREBASE_AUTH_DOMAIN || envArchivo.FIREBASE_AUTH_DOMAIN,
+        FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || envArchivo.FIREBASE_PROJECT_ID,
+        FIREBASE_STORAGE_BUCKET: process.env.FIREBASE_STORAGE_BUCKET || envArchivo.FIREBASE_STORAGE_BUCKET,
+        FIREBASE_MESSAGING_SENDER_ID: process.env.FIREBASE_MESSAGING_SENDER_ID || envArchivo.FIREBASE_MESSAGING_SENDER_ID,
+        FIREBASE_APP_ID: process.env.FIREBASE_APP_ID || envArchivo.FIREBASE_APP_ID,
+        FIREBASE_MEASUREMENT_ID: process.env.FIREBASE_MEASUREMENT_ID || envArchivo.FIREBASE_MEASUREMENT_ID,
+        SESSION_TIMEOUT_MIN: process.env.SESSION_TIMEOUT_MIN || envArchivo.SESSION_TIMEOUT_MIN,
+        CORS_ALLOWED_ORIGINS: process.env.CORS_ALLOWED_ORIGINS || envArchivo.CORS_ALLOWED_ORIGINS,
+        ADMIN_EMAILS: process.env.ADMIN_EMAILS || envArchivo.ADMIN_EMAILS
+    };
+
     const faltantes = REQUERIDAS.filter((k) => !env[k]);
     if (faltantes.length > 0) {
-        console.error("[generate-config] Faltan variables en .env: " + faltantes.join(", "));
-        console.error("[generate-config] Copia .env.example a .env y completa los valores.");
+        console.error("[generate-config] Faltan variables en .env / process.env: " + faltantes.join(", "));
+        console.error("[generate-config] Copia .env.example a .env y completa los valores, o define las variables en el entorno (Vercel).");
         process.exit(1);
     }
 
@@ -110,9 +124,9 @@ function principal() {
 
     const configJs = `/* ============================================================
    CONFIGURACIÓN GENERADA AUTOMÁTICAMENTE
-   Archivo producido por scripts/generate-config.js a partir de .env.
-   NO edites a mano: tus cambios se sobrescribirán con "npm run config".
-   Este archivo está excluido de git (.gitignore).
+   Archivo producido por scripts/generate-config.js a partir de .env
+   y/o process.env. NO edites a mano: tus cambios se sobrescribirán
+   con "npm run config". Este archivo está excluido de git (.gitignore).
    ============================================================ */
 export const FIREBASE_CONFIG = ${json(firebaseConfig)};
 
@@ -124,13 +138,13 @@ export const ADMIN_EMAILS = ${json(adminEmails)};
 `;
 
     fs.writeFileSync(RUTA_CONFIG_JS, configJs, "utf8");
-    console.log("[generate-config] OK -> frontend/js/config.js");
+    console.log("[generate-config] OK -> js/config.js");
 
     fs.writeFileSync(RUTA_CONFIG_EXAMPLE, generarConfigEjemplo(), "utf8");
-    console.log("[generate-config] OK -> frontend/js/config.example.js (plantilla)");
+    console.log("[generate-config] OK -> js/config.example.js (plantilla)");
 
     const envFunctions = [
-        "# Generado por scripts/generate-config.js a partir de .env. No editar.",
+        "# Generado por scripts/generate-config.js a partir de .env / process.env. No editar.",
         "ADMIN_EMAILS=" + extraer(env, "ADMIN_EMAILS"),
         "CORS_ALLOWED_ORIGINS=" + extraer(env, "CORS_ALLOWED_ORIGINS")
     ].join("\n") + "\n";
