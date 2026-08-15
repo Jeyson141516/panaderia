@@ -37,7 +37,7 @@
             <button type="button" class="theme-toggle" aria-label="Cambiar de tema" title="Cambiar de tema"><span class="toggle-icon" aria-hidden="true">🌙</span></button>
         </div>
         <ul>
-            <li><a href="index.html" class="active"><span class="nav-icon">💰</span> Ventas</a></li>
+            <li><a href="index.html" class="active"><span class="nav-icon">💰</span> Ventas<span id="navBadgeVentas" class="nav-badge" hidden></span></a></li>
             <li><a href="inventario.html"><span class="nav-icon">📦</span> Inventario y Gastos</a></li>
             <li><a href="personal.html"><span class="nav-icon">👥</span> Personal y Adelantos</a></li>
             <li><a href="reportes.html"><span class="nav-icon">📊</span> Reportes</a></li>
@@ -53,6 +53,12 @@
             <h1>Registrar Venta de Pan</h1>
             <p>Cada funda cuesta $1.00</p>
         </header>
+
+        <div id="alertaDeudores" class="alerta-deudores hidden">
+            <span class="alerta-icono" aria-hidden="true">⚠️</span>
+            <span class="alerta-texto">Tienes <b id="alertaDeudoresContador">0</b> clientes con saldo pendiente</span>
+            <button type="button" id="btnVerDeudores" class="btn-accion btn-abonar">Ver deudores</button>
+        </div>
 
         <section class="card">
             <form id="formVenta">
@@ -184,9 +190,33 @@
         </div>
     </div>
 
+    <div id="modalDeudores" class="modal">
+        <div class="modal-card modal-card--wide">
+            <div class="modal-header">
+                <h3>⚠️ Clientes con saldo pendiente</h3>
+                <button type="button" class="modal-close" id="cerrarModalDeudores" aria-label="Cerrar">✕</button>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Saldo</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaDeudores">
+                        <tr><td colspan="3" class="empty-cell">Cargando deudores...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
     <script type="module" src="js/ventas.js"></script>
+    <script type="module" src="js/deudores.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {

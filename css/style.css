@@ -184,6 +184,24 @@ nav ul li a.active {
     box-shadow: inset 3px 0 0 var(--brand-1), var(--shadow-sm);
 }
 
+/* Contador de deudas en la pestaña de Ventas */
+nav ul li a .nav-badge {
+    margin-left: auto;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--danger);
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 20px;
+    text-align: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 2px rgba(17, 24, 39, .55);
+    animation: saldoIn .18s ease-out;
+}
+
 /* Pie de la barra: usuario + cerrar sesión */
 nav .nav-footer {
     margin-top: auto;
@@ -1364,6 +1382,26 @@ input[type="submit"]:disabled:hover {
     background: transparent;
 }
 
+/* Clientes con saldo pendiente: destacados primero en el autocompletado */
+.suggestion-list li.con-deuda {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-left: 3px solid var(--danger);
+}
+
+.suggestion-list li.con-deuda .deuda-tag {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: var(--danger);
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
 /* ============ Saldo en tiempo real ============ */
 .saldo-info {
     display: flex;
@@ -1400,6 +1438,41 @@ input[type="submit"]:disabled:hover {
 @keyframes saldoIn {
     from { opacity: 0; transform: translateY(-4px); }
     to   { opacity: 1; transform: none; }
+}
+
+/* ============ Alerta de deudores (resumen superior) ============ */
+.alerta-deudores {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, rgba(239, 68, 68, .12), rgba(245, 158, 11, .10));
+    border: 1px solid rgba(239, 68, 68, .35);
+    font-size: 0.95rem;
+    color: var(--text);
+    animation: saldoIn .2s ease-out;
+}
+
+.alerta-deudores .alerta-icono {
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+.alerta-deudores .alerta-texto {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.alerta-deudores .alerta-texto b {
+    color: var(--danger);
+    font-size: 1.05rem;
+}
+
+.alerta-deudores .btn-abonar {
+    margin-left: auto;
 }
 
 /* ============ Modal ============ */
@@ -2109,6 +2182,12 @@ nav, main {
 :root[data-theme="oscuro"] .saldo-info {
     background: rgba(255, 255, 255, 0.045);
     border-color: var(--border);
+}
+
+/* Alerta de deudores en tema oscuro */
+:root[data-theme="oscuro"] .alerta-deudores {
+    background: linear-gradient(135deg, rgba(239, 68, 68, .16), rgba(245, 158, 11, .12));
+    border-color: rgba(239, 68, 68, .45);
 }
 
 /* Modales */

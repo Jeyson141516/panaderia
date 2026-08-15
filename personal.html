@@ -39,7 +39,7 @@
             <button type="button" class="theme-toggle" aria-label="Cambiar de tema" title="Cambiar de tema"><span class="toggle-icon" aria-hidden="true">🌙</span></button>
         </div>
         <ul>
-            <li><a href="index.html"><span class="nav-icon">💰</span> Ventas</a></li>
+            <li><a href="index.html"><span class="nav-icon">💰</span> Ventas<span id="navBadgeVentas" class="nav-badge" hidden></span></a></li>
             <li><a href="inventario.html"><span class="nav-icon">📦</span> Inventario y Gastos</a></li>
             <li><a href="personal.html" class="active"><span class="nav-icon">👥</span> Personal y Adelantos</a></li>
             <li><a href="reportes.html"><span class="nav-icon">📊</span> Reportes</a></li>
@@ -177,6 +177,7 @@
     <div id="areaImpresion" class="area-impresion" aria-hidden="true"></div>
 
     <script type="module" src="js/personal.js"></script>
+    <script type="module" src="js/deudores.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {

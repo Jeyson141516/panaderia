@@ -9,7 +9,7 @@
      como respaldo, para evitar peticiones repetidas.
    Al cambiar CACHE_VERSION se limpian las cachés antiguas.
    ============================================================ */
-const CACHE_VERSION = 'panaderia-v7';
+const CACHE_VERSION = 'panaderia-v8';
 const CACHE_RUNTIME = 'panaderia-runtime';
 
 const PRECACHE = [
@@ -38,6 +38,7 @@ const PRECACHE = [
     './js/inventario.js',
     './js/personal.js',
     './js/reportes.js',
+    './js/deudores.js',
     './js/reporte-impresion.js',
     './js/personal-impresion.js',
     './js/reporte-impresion-render.js',

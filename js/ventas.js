@@ -2,6 +2,7 @@ import { db } from './firebase-config.js';
 import { collection, addDoc, getDocs, serverTimestamp, query, where, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
 import { normalizarTexto, limpiarTexto, validarEntero, validarMonto, validarTelefono, ejecutarConBotonBloqueado, leerCache, guardarCache, esCoincidenciaFuzzy } from './utils.js';
+import { cargarDeudores, obtenerDeudores, actualizarBadgeVentas } from './deudores.js';
 
 const PRECIO_FUNDA = 1.00;
 
@@ -208,26 +209,23 @@ function actualizarContadorDia() {
 buscadorVentasDia.addEventListener('input', aplicarFiltroBuscadorVentas);
 
 async function cargarSaldos() {
-    const snapshot = await getDocs(
-        query(collection(db, "ventas"),
-            where("estadoPago", "in", ["debe", "abono"]))
-    );
-
+    const { lista, mapaNorm } = await cargarDeudores();
     saldosMap = {};
-    saldosNormMap = {};
-    snapshot.forEach((docSnap) => {
-        const v = docSnap.data();
-        const nombre = v.cliente || "Cliente General";
-        const monto = Number(v.totalVenta) || 0;
-        let saldo = saldosMap[nombre] || 0;
-        if (v.estadoPago === 'debe') {
-            saldo += monto;
-        } else if (v.estadoPago === 'abono') {
-            saldo -= monto;
-        }
-        saldosMap[nombre] = saldo;
-        saldosNormMap[normalizarTexto(nombre)] = { nombre, saldo };
+    saldosNormMap = mapaNorm;
+    lista.forEach(({ cliente, saldo }) => {
+        saldosMap[cliente] = saldo;
     });
+    actualizarBadgeVentas();
+    actualizarAlertaDeudores();
+}
+
+function actualizarAlertaDeudores() {
+    const alerta = document.getElementById('alertaDeudores');
+    const contador = document.getElementById('alertaDeudoresContador');
+    if (!alerta || !contador) return;
+    const total = obtenerDeudores().total;
+    contador.textContent = String(total);
+    alerta.classList.toggle('hidden', total === 0);
 }
 
 async function cargarVentasDelDia() {
@@ -473,23 +471,41 @@ clienteBusqueda.addEventListener('input', async (e) => {
 function buscarClientes(texto) {
     listaSugerencias.innerHTML = '';
     indiceActivo = -1;
-    let matches = 0;
 
+    const coincidencias = [];
     clientesCache.forEach((cliente) => {
         if (esCoincidenciaFuzzy(cliente.nombre, texto)) {
-            matches++;
-            const li = document.createElement('li');
-            li.textContent = cliente.nombre;
-            li.addEventListener('click', () => seleccionarCliente(cliente.nombre));
-            li.addEventListener('mouseenter', () => {
-                indiceActivo = matches - 1;
-                actualizarResaltado();
+            const info = saldosNormMap[cliente.nombreNorm];
+            const saldo = info ? Math.max(0, info.saldo) : 0;
+            coincidencias.push({
+                nombre: cliente.nombre,
+                saldo,
+                conDeuda: saldo > 0
             });
-            listaSugerencias.appendChild(li);
         }
     });
 
-    if (matches === 0) {
+    // Primero los clientes con saldo pendiente (de mayor a menor), luego el resto.
+    coincidencias.sort((a, b) =>
+        (b.conDeuda - a.conDeuda) || a.nombre.localeCompare(b.nombre, "es"));
+
+    coincidencias.forEach((cliente, index) => {
+        const li = document.createElement('li');
+        if (cliente.conDeuda) {
+            li.className = 'con-deuda';
+            li.innerHTML = `${escapeHtml(cliente.nombre)}<span class="deuda-tag">Fiado ${formatearMoneda(cliente.saldo)}</span>`;
+        } else {
+            li.textContent = cliente.nombre;
+        }
+        li.addEventListener('click', () => seleccionarCliente(cliente.nombre));
+        li.addEventListener('mouseenter', () => {
+            indiceActivo = index;
+            actualizarResaltado();
+        });
+        listaSugerencias.appendChild(li);
+    });
+
+    if (coincidencias.length === 0) {
         const li = document.createElement('li');
         li.className = 'no-result';
         li.textContent = 'No se encontró el cliente. Usa "+ Nuevo"';
@@ -544,6 +560,43 @@ modalCliente.addEventListener('click', (e) => {
 function cerrarModalHandler() {
     modalCliente.style.display = 'none';
 }
+
+const modalDeudores = document.getElementById('modalDeudores');
+const btnVerDeudores = document.getElementById('btnVerDeudores');
+const cerrarModalDeudores = document.getElementById('cerrarModalDeudores');
+const tablaDeudores = document.getElementById('tablaDeudores');
+
+function renderListaDeudores() {
+    const { lista } = obtenerDeudores();
+    if (!tablaDeudores) return;
+    if (lista.length === 0) {
+        tablaDeudores.innerHTML = '<tr><td colspan="3" class="empty-cell">No hay deudas pendientes. ¡Todo al día!</td></tr>';
+        return;
+    }
+    tablaDeudores.innerHTML = lista.map(({ cliente, saldo }) => `
+        <tr>
+            <td>${escapeHtml(cliente)}</td>
+            <td class="monto-cell saldo-cell">${formatearMoneda(saldo)}</td>
+            <td class="actions-cell"><button type="button" class="btn-accion btn-abonar" data-cliente="${escapeHtml(cliente)}">Abonar</button></td>
+        </tr>`).join('');
+}
+
+btnVerDeudores.addEventListener('click', () => {
+    renderListaDeudores();
+    modalDeudores.style.display = 'flex';
+});
+
+cerrarModalDeudores.addEventListener('click', () => { modalDeudores.style.display = 'none'; });
+modalDeudores.addEventListener('click', (e) => {
+    if (e.target === modalDeudores) modalDeudores.style.display = 'none';
+});
+
+modalDeudores.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-abonar');
+    if (!btn) return;
+    modalDeudores.style.display = 'none';
+    prepararAbono(btn.dataset.cliente);
+});
 
 guardarClienteModal.addEventListener('click', () => {
     ejecutarConBotonBloqueado(guardarClienteModal, async () => {
