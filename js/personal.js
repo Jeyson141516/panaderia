@@ -6,6 +6,7 @@ import { limpiarTexto, validarMonto, ejecutarConBotonBloqueado } from './utils.j
 const TRABAJADORES = ["Patucho", "Lucho", "Flaquito"];
 const COL_ADELANTOS = "adelantos";
 const COL_PAGOS = "pagos_personal";
+const CLAVE_REPORTE_PERSONAL = 'panaderia:reporte-personal-actual';
 
 const formMovimiento = document.getElementById('formMovimiento');
 const resumenPersonal = document.getElementById('resumenPersonal');
@@ -16,6 +17,7 @@ const reporteInicio = document.getElementById('reportInicio');
 const reporteFin = document.getElementById('reportFin');
 const btnFiltrarReporte = document.getElementById('btnFiltrarReporte');
 const btnImprimirReporte = document.getElementById('btnImprimirReporte');
+const btnDescargarReporte = document.getElementById('btnDescargarReporte');
 const reporteTotales = document.getElementById('reporteTotales');
 const tablaReporte = document.getElementById('tablaReporte');
 
@@ -291,78 +293,58 @@ formMovimiento.addEventListener('submit', (e) => {
     });
 });
 
-function imprimirReporte() {
-    if (reporteActual.length === 0) {
-        toast("No hay movimientos para imprimir. Ajusta el filtro.", "warning");
+function construirReportePersonal() {
+    aplicarFiltroReporte();
+
+    const seleccion = reporteTrabajador.value;
+    const inicio = reporteInicio.value;
+    const fin = reporteFin.value;
+    const etiquetaTrabajador = seleccion === "todos" ? "Todos los empleados" : seleccion;
+    const nombres = seleccion === "todos" ? TRABAJADORES : [seleccion];
+
+    const resumenes = nombres
+        .filter((n) => reporteActual.some((mv) => mv.trabajador === n))
+        .map((nombre) => ({ nombre, ...resumenDe(reporteActual, nombre) }));
+
+    const totalAdelantos = resumenes.reduce((s, r) => s + r.adelantos, 0);
+    const totalPagos = resumenes.reduce((s, r) => s + r.pagos, 0);
+
+    return {
+        trabajador: seleccion,
+        etiquetaTrabajador,
+        inicio,
+        fin,
+        etiquetaPeriodo: `${inicio || "inicio"} a ${fin || "hoy"}`,
+        resumenes,
+        detalle: reporteActual.map((mv) => ({
+            fechaTexto: formatearFecha(mv.fecha),
+            trabajador: mv.trabajador,
+            tipo: mv.tipo,
+            concepto: mv.concepto,
+            monto: mv.monto
+        })),
+        totalAdelantos,
+        totalPagos,
+        totalAPagar: totalPagos - totalAdelantos
+    };
+}
+
+function abrirVistaImpresionPersonal(accion) {
+    const reporte = construirReportePersonal();
+
+    if (reporte.detalle.length === 0) {
+        toast("No hay movimientos con los filtros seleccionados. Ajusta el filtro.", "warning");
         return;
     }
 
-    const seleccion = reporteTrabajador.value;
-    const etiquetaTrabajador = seleccion === "todos" ? "Todos los empleados" : seleccion;
-    const periodo = `${reporteInicio.value || "inicio"} a ${reporteFin.value || "hoy"}`;
-    const nombres = seleccion === "todos" ? TRABAJADORES : [seleccion];
+    try {
+        localStorage.setItem(CLAVE_REPORTE_PERSONAL, JSON.stringify(reporte));
+    } catch (error) {
+        toast("No se pudo guardar el reporte. Intenta de nuevo.", "error");
+        return;
+    }
 
-    const resumenHtml = nombres
-        .filter((n) => reporteActual.some((mv) => mv.trabajador === n))
-        .map((nombre) => {
-            const r = resumenDe(reporteActual, nombre);
-            return `
-            <tr>
-                <td>${escapeHtml(nombre)}</td>
-                <td style="text-align:right">${r.movimientos}</td>
-                <td style="text-align:right">${formatearMoneda(r.adelantos)}</td>
-                <td style="text-align:right">${formatearMoneda(r.pagos)}</td>
-                <td style="text-align:right"><b>${formatearMoneda(r.balance)}</b></td>
-            </tr>`;
-        }).join("");
-
-    const filas = filasMovimientosHTML(reporteActual);
-
-    const ventana = window.open('', '_blank', 'width=900,height=700');
-    ventana.document.write(`
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
-            <title>Reporte de Empleados - Panadería Familiar</title>
-            <style>
-                body { font-family: 'Segoe UI', Arial, sans-serif; color: #1f2937; padding: 32px; }
-                h1 { font-size: 22px; margin: 0 0 4px; }
-                .sub { color: #6b7280; margin-bottom: 20px; }
-                table { width: 100%; border-collapse: collapse; margin-top: 14px; }
-                th, td { border-bottom: 1px solid #e5e7eb; padding: 9px 8px; text-align: left; }
-                th { background: #f3f4f6; }
-                h2 { font-size: 16px; margin-top: 26px; }
-                .badge { padding: 2px 8px; border-radius: 999px; font-size: 12px; }
-                .badge.adelanto { background: #fef3c7; color: #b45309; }
-                .badge.pago { background: #dcfce7; color: #15803d; }
-                .neg { color: #dc2626; }
-                .pos { color: #16a34a; }
-            </style>
-        </head>
-        <body>
-            <h1>Reporte de Empleados — Panadería Familiar</h1>
-            <div class="sub">Trabajador: ${etiquetaTrabajador} · Período: ${periodo}</div>
-
-            <h2>💰 Balance por trabajador</h2>
-            <table>
-                <thead><tr><th>Trabajador</th><th style="text-align:right">Mov.</th><th style="text-align:right">Adelantos</th><th style="text-align:right">Salario Total</th><th style="text-align:right">Total a Pagar</th></tr></thead>
-                <tbody>${resumenHtml}</tbody>
-            </table>
-
-            <h2>📋 Detalle de movimientos</h2>
-            <table>
-                <thead><tr><th>Fecha</th><th>Trabajador</th><th>Tipo</th><th>Concepto</th><th style="text-align:right">Monto</th></tr></thead>
-                <tbody>${filas}</tbody>
-            </table>
-
-            <p style="margin-top: 28px; color: #9ca3af; font-size: 12px;">Generado el ${new Date().toLocaleString('es-EC')}</p>
-        </body>
-        </html>
-    `);
-    ventana.document.close();
-    ventana.focus();
-    setTimeout(() => ventana.print(), 350);
+    window.open(`personal-impresion.html?accion=${accion}`, "_blank");
 }
 
 document.getElementById('diaMovimiento').value = fechaHoy();
@@ -370,7 +352,8 @@ reporteInicio.value = inicioSemana();
 reporteFin.value = fechaHoy();
 
 btnFiltrarReporte.addEventListener('click', aplicarFiltroReporte);
-btnImprimirReporte.addEventListener('click', imprimirReporte);
+btnImprimirReporte.addEventListener('click', () => abrirVistaImpresionPersonal('imprimir'));
+btnDescargarReporte.addEventListener('click', () => abrirVistaImpresionPersonal('descargar'));
 [reporteTrabajador, reporteInicio, reporteFin].forEach((el) => el.addEventListener('change', aplicarFiltroReporte));
 
 cargarMovimientos();

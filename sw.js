@@ -9,7 +9,7 @@
      como respaldo, para evitar peticiones repetidas.
    Al cambiar CACHE_VERSION se limpian las cachés antiguas.
    ============================================================ */
-const CACHE_VERSION = 'panaderia-v2';
+const CACHE_VERSION = 'panaderia-v3';
 const CACHE_RUNTIME = 'panaderia-runtime';
 
 const PRECACHE = [
@@ -19,6 +19,7 @@ const PRECACHE = [
     './personal.html',
     './reportes.html',
     './reporte-impresion.html',
+    './personal-impresion.html',
     './login.html',
     './css/style.css',
     './js/config.js',
@@ -33,7 +34,8 @@ const PRECACHE = [
     './js/inventario.js',
     './js/personal.js',
     './js/reportes.js',
-    './js/reporte-impresion.js'
+    './js/reporte-impresion.js',
+    './js/personal-impresion.js'
 ];
 
 self.addEventListener('install', (evento) => {
