@@ -22,6 +22,7 @@ const lblResUtilidad = document.getElementById('lblResUtilidad');
 
 const btnCsv = document.getElementById('btnCsv');
 const tablaPagosTrabajadores = document.getElementById('tablaPagosTrabajadores');
+const tablaGastosPorProducto = document.getElementById('tablaGastosPorProducto');
 
 const fechaInicioInput = document.getElementById('fechaInicio');
 const fechaFinInput = document.getElementById('fechaFin');
@@ -150,10 +151,7 @@ async function cargarReporte() {
             }
         });
 
-        let totalGastos = 0;
-        gastosSnap.forEach((docSnap) => {
-            totalGastos += Number(docSnap.data().monto) || 0;
-        });
+        const { total: totalGastos, items: gastosPorProducto } = agruparGastosPorProducto(gastosSnap);
 
         let totalAdelantos = 0;
         adelantosSnap.forEach((docSnap) => {
@@ -193,6 +191,7 @@ async function cargarReporte() {
             totalPagosPersonal,
             totalAPagar,
             utilidadNeta,
+            gastosPorProducto,
             pagosTrabajadores,
             clientes: Object.entries(clientesMap).sort((a, b) => b[1] - a[1]).slice(0, 5)
         };
@@ -206,6 +205,7 @@ async function cargarReporte() {
         lblResUtilidad.style.color = utilidadNeta >= 0 ? "var(--success)" : "var(--danger)";
 
         renderPagosTrabajadores(pagosTrabajadores);
+        renderGastosPorProducto(gastosPorProducto);
 
         lblContado.textContent = formatearMoneda(totalContado);
         lblCredito.textContent = formatearMoneda(totalCredito);
@@ -237,6 +237,25 @@ async function cargarReporte() {
     } finally {
         btnConsultar.disabled = false;
     }
+}
+
+function agruparGastosPorProducto(gastosSnap) {
+    const mapa = new Map();
+    let total = 0;
+
+    gastosSnap.forEach((docSnap) => {
+        const g = docSnap.data();
+        const monto = Number(g.monto) || 0;
+        const nombre = String(g.producto || g.descripcion || "Otros").trim() || "Otros";
+        total += monto;
+        mapa.set(nombre, (mapa.get(nombre) || 0) + monto);
+    });
+
+    const items = [...mapa.entries()]
+        .map(([producto, totalInvertido]) => ({ producto, totalInvertido }))
+        .sort((a, b) => b.totalInvertido - a.totalInvertido);
+
+    return { total, items };
 }
 
 function construirPagosTrabajadores(adelantosSnap, pagosSnap) {
@@ -279,6 +298,19 @@ function renderPagosTrabajadores(filas) {
             <td class="monto-cell">${formatearMoneda(f.salarioTotal)}</td>
             <td class="monto-cell">${formatearMoneda(f.adelantos)}</td>
             <td class="monto-cell"><b style="color: ${f.totalPagar >= 0 ? "var(--success)" : "var(--danger)"};">${formatearMoneda(f.totalPagar)}</b></td>
+        </tr>`).join("");
+}
+
+function renderGastosPorProducto(items) {
+    if (items.length === 0) {
+        tablaGastosPorProducto.innerHTML = '<tr><td colspan="2" class="empty-cell">No hay gastos registrados en el período.</td></tr>';
+        return;
+    }
+
+    tablaGastosPorProducto.innerHTML = items.map((g) => `
+        <tr>
+            <td>${escapeHtml(g.producto)}</td>
+            <td class="monto-cell">${formatearMoneda(g.totalInvertido)}</td>
         </tr>`).join("");
 }
 

@@ -274,6 +274,24 @@
 
     <div id="reporteDocumento" class="documento"></div>
 
+    <!-- Plantilla: Resumen de Gastos por Producto (se clona e inserta dinámicamente al final del reporte) -->
+    <template id="plantillaGastosPorProducto">
+        <section class="tabla-gastos">
+            <h2 class="seccion">Resumen de Gastos por Producto</h2>
+            <table class="classic-table">
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">Concepto / Insumo</th>
+                        <th style="text-align: right;">Total Invertido ($)</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaGastosPorProducto">
+                    <!-- Aquí se deben inyectar las filas mediante JS -->
+                </tbody>
+            </table>
+        </section>
+    </template>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script type="module" src="js/reporte-impresion.js"></script>
 </body>

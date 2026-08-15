@@ -128,7 +128,28 @@ function pintarDocumento() {
         </footer>
     `;
 
+    pintarGastosPorProducto(reporteDocumento, r);
+
     return r;
+}
+
+function pintarGastosPorProducto(contenedor, r) {
+    const plantilla = document.getElementById('plantillaGastosPorProducto');
+    if (!plantilla) return;
+
+    const fragmento = plantilla.content.cloneNode(true);
+    const cuerpo = fragmento.getElementById('tablaGastosPorProducto');
+    const items = r.gastosPorProducto || [];
+
+    if (items.length === 0) {
+        cuerpo.innerHTML = '<tr><td colspan="2" class="sin-datos">Sin gastos en el período seleccionado.</td></tr>';
+    } else {
+        cuerpo.innerHTML = items.map((g) =>
+            `<tr><td>${escapeHtml(g.producto || 'Otros')}</td><td style="text-align: right;">${formatearMoneda(g.totalInvertido)}</td></tr>`).join('');
+    }
+
+    const pie = contenedor.querySelector('.pie');
+    contenedor.insertBefore(fragmento, pie);
 }
 
 function imprimirDocumento() {
@@ -358,6 +379,17 @@ function descargarPdf() {
         ['#', 'Cliente', 'Fundas'],
         clientesFilas,
         { anchos: [14, 112, 48], alinear: ['left', 'left', 'right'] }
+    );
+
+    /* ---------- Resumen de Gastos por Producto ---------- */
+    encabezadoSeccion('Resumen de Gastos por Producto');
+    const gastosFilas = (r.gastosPorProducto || []).length > 0
+        ? r.gastosPorProducto.map((g) => [g.producto, formatearMoneda(g.totalInvertido)])
+        : [['Sin gastos en el período seleccionado', '']];
+    tabla(
+        ['Concepto / Insumo', 'Total Invertido ($)'],
+        gastosFilas,
+        { anchos: [100, 74], alinear: ['left', 'right'] }
     );
 
     /* ---------- Pie y numeración ---------- */
