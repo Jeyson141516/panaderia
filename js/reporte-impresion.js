@@ -263,9 +263,12 @@ async function descargarPdf() {
         { anchos: [100, 74], alinear: ['left', 'right'], destacarUltima: true }
     );
 
-    textoFlujo(`Nota: Utilidad = Ventas de Contado − Gastos (Insumos) − Total Adelantos Entregados. ` +
+    textoFlujo(`Nota: Utilidad = Ventas de Contado − Gastos (Insumos) − Personal entregado. ` +
+        `Cada liquidación descuenta los adelantos históricos del empleado (previos a la fecha de pago) y refleja el Neto Real entregado ` +
+        `(Salario Bruto − Adelantos aplicados); los adelantos del período se descuentan por separado. ` +
+        `Un adelanto solo se descuenta una vez y los de días anteriores no vuelven a descontarse (ya afectaron la caja en su momento). ` +
         `Los fiados y abonos no alteran esta fórmula (efectivo real de caja). ` +
-        `Detalle Personal — Salario Total: ${formatearMoneda(r.totalPagosPersonal)}  ·  Adelantos: ${formatearMoneda(r.totalAdelantos)}`, { size: 7.5, color: GRIS });
+        `Detalle Personal — Salario Bruto: ${formatearMoneda(r.totalPagosPersonal)}  ·  Adelantos: ${formatearMoneda(r.totalAdelantos)}  ·  Neto Liquidado: ${formatearMoneda(r.netoLiquidado || 0)}`, { size: 7.5, color: GRIS });
 
     /* ---------- Pagos por Trabajador ---------- */
     encabezadoSeccion('Pagos por Trabajador');

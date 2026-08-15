@@ -97,6 +97,12 @@ function rangoFechas() {
     return condiciones;
 }
 
+function limitesFechas() {
+    const inicio = fechaInicioInput.value ? new Date(`${fechaInicioInput.value}T00:00:00`) : null;
+    const fin = fechaFinInput.value ? new Date(`${fechaFinInput.value}T23:59:59.999`) : null;
+    return { inicio, fin };
+}
+
 function construirQuery() {
     const condiciones = rangoFechas();
     condiciones.push(orderBy("fecha", "desc"));
@@ -114,8 +120,8 @@ async function cargarReporte() {
         const [querySnapshot, gastosSnap, adelantosSnap, pagosSnap] = await Promise.all([
             getDocs(construirQuery()),
             getDocs(query(collection(db, "gastos_inventario"), ...rangoFechas(), orderBy("fecha", "desc"))),
-            getDocs(query(collection(db, "adelantos"), ...rangoFechas(), orderBy("fecha", "desc"))),
-            getDocs(query(collection(db, "pagos_personal"), ...rangoFechas(), orderBy("fecha", "desc")))
+            getDocs(query(collection(db, "adelantos"), orderBy("fecha", "asc"))),
+            getDocs(query(collection(db, "pagos_personal"), orderBy("fecha", "asc")))
         ]);
 
         let totalContado = 0;
@@ -156,23 +162,27 @@ async function cargarReporte() {
 
         const { total: totalGastos, items: gastosPorProducto } = agruparGastosPorProducto(gastosSnap);
 
-        let totalAdelantos = 0;
-        adelantosSnap.forEach((docSnap) => {
-            totalAdelantos += Number(docSnap.data().monto) || 0;
-        });
+        const { inicio, fin } = limitesFechas();
+        const pagosTrabajadores = construirPagosTrabajadores(adelantosSnap, pagosSnap, inicio, fin);
 
-        let totalPagosPersonal = 0;
-        pagosSnap.forEach((docSnap) => {
-            totalPagosPersonal += Number(docSnap.data().monto) || 0;
-        });
-
-        const pagosTrabajadores = construirPagosTrabajadores(adelantosSnap, pagosSnap);
-        const totalAPagar = totalPagosPersonal - totalAdelantos;
-        // Utilidad Neta = Ventas de Contado - Gastos (Insumos) - Total Adelantos Entregados.
-        // Se basa EXCLUSIVAMENTE en el flujo de efectivo real del período: solo el
-        // contado recaudado entra a la fórmula. Las ventas fiadas (crédito) y los
-        // abonos NO la alteran, y los adelantos se descuentan como salida real de caja.
-        const utilidadNeta = ingresosContado - totalGastos - totalAdelantos;
+        // Totales del período tras vincular adelantos históricos con cada liquidación:
+        //  - totalPagosPersonal: salario BRUTO liquidado en el período.
+        //  - totalAdelantos: adelantos entregados dentro del período.
+        //  - netoLiquidado: Neto Real pagado = salario bruto − adelantos históricos
+        //    que esa liquidación consumió (aunque el adelanto sea de días anteriores).
+        //  - totalAPagar: efectivo REAL entregado a personal en el período
+        //    (adelantos del período + Neto Liquidado).
+        const totalPagosPersonal = pagosTrabajadores.reduce((s, f) => s + f.salarioTotal, 0);
+        const totalAdelantos = pagosTrabajadores.reduce((s, f) => s + f.adelantos, 0);
+        const netoLiquidado = pagosTrabajadores.reduce((s, f) => s + f.netoLiquidado, 0);
+        const totalAPagar = totalAdelantos + netoLiquidado;
+        // Utilidad Neta = Ventas de Contado - Gastos (Insumos) - Personal entregado.
+        // Cada liquidación refleja el Neto Real pagado hoy (bruto − adelantos históricos),
+        // por lo que los adelantos de días anteriores NO vuelven a descontarse al filtrar
+        // por períodos cortos como "Hoy". Se basa EXCLUSIVAMENTE en el flujo de efectivo
+        // real del período: solo el contado recaudado entra a la fórmula. Las ventas
+        // fiadas (crédito) y los abonos NO la alteran.
+        const utilidadNeta = ingresosContado - totalGastos - totalAPagar;
 
         const totalFacturado = totalContado + totalCredito;
         const totalPendiente = Math.max(0, totalCredito - totalAbonos);
@@ -194,6 +204,7 @@ async function cargarReporte() {
             totalGastos,
             totalAdelantos,
             totalPagosPersonal,
+            netoLiquidado,
             totalAPagar,
             utilidadNeta,
             gastosPorProducto,
@@ -205,7 +216,7 @@ async function cargarReporte() {
         lblResIngresosContado.textContent = formatearMoneda(ingresosContado);
         lblResGastos.textContent = formatearMoneda(totalGastos);
         lblResPersonal.textContent = formatearMoneda(totalAPagar);
-        lblResPersonalDetalle.textContent = `Salario Total: ${formatearMoneda(totalPagosPersonal)} · Adelantos: ${formatearMoneda(totalAdelantos)}`;
+        lblResPersonalDetalle.textContent = `Salario Bruto: ${formatearMoneda(totalPagosPersonal)} · Adelantos: ${formatearMoneda(totalAdelantos)} · Neto Liquidado: ${formatearMoneda(netoLiquidado)}`;
         lblResAdelantos.textContent = formatearMoneda(totalAdelantos);
         lblResUtilidad.textContent = formatearMoneda(utilidadNeta);
         lblResUtilidad.style.color = utilidadNeta >= 0 ? "var(--success)" : "var(--danger)";
@@ -362,31 +373,64 @@ function agruparGastosPorProducto(gastosSnap) {
     return { total, items };
 }
 
-function construirPagosTrabajadores(adelantosSnap, pagosSnap) {
+function construirPagosTrabajadores(adelantosSnap, pagosSnap, inicio, fin) {
     const mapa = new Map();
 
-    function acumular(docSnap, esAdelanto) {
+    function fechaDe(docSnap) {
+        const f = docSnap.data().fecha;
+        return f && f.toDate ? f.toDate() : null;
+    }
+
+    function acumular(docSnap, tipo) {
         const d = docSnap.data();
         const nombre = d.trabajador || "Sin asignar";
         const monto = Number(d.monto) || 0;
 
         if (!mapa.has(nombre)) {
-            mapa.set(nombre, { trabajador: nombre, salarioTotal: 0, adelantos: 0, totalPagar: 0 });
+            mapa.set(nombre, { trabajador: nombre, adelantos: [], pagos: [] });
         }
-
-        const fila = mapa.get(nombre);
-        if (esAdelanto) {
-            fila.adelantos += monto;
-        } else {
-            fila.salarioTotal += monto;
-        }
+        mapa.get(nombre)[tipo].push({ fecha: fechaDe(docSnap), monto });
     }
 
-    adelantosSnap.forEach((docSnap) => acumular(docSnap, true));
-    pagosSnap.forEach((docSnap) => acumular(docSnap, false));
+    adelantosSnap.forEach((docSnap) => acumular(docSnap, "adelantos"));
+    pagosSnap.forEach((docSnap) => acumular(docSnap, "pagos"));
+
+    const enPeriodo = (fecha) => fecha !== null && (!inicio || fecha >= inicio) && (!fin || fecha <= fin);
 
     return [...mapa.values()]
-        .map((f) => ({ ...f, totalPagar: f.salarioTotal - f.adelantos }))
+        .map((fila) => {
+            const adelantosOrd = fila.adelantos
+                .filter((a) => a.fecha !== null)
+                .sort((a, b) => a.fecha - b.fecha);
+            const pagosOrd = fila.pagos
+                .filter((p) => p.fecha !== null)
+                .sort((a, b) => a.fecha - b.fecha);
+
+            // Vinculación de adelantos históricos: cada liquidación consume los
+            // adelantos registrados hasta la fecha de pago (aunque sean de días
+            // anteriores) para obtener el Neto Real entregado en esa liquidación.
+            // Un adelanto solo se descuenta una vez: al liquidar el salario que cubre.
+            let iAdelantos = 0;
+            let disponibles = 0;
+            const pagosNeto = pagosOrd.map((pago) => {
+                while (iAdelantos < adelantosOrd.length && adelantosOrd[iAdelantos].fecha <= pago.fecha) {
+                    disponibles += adelantosOrd[iAdelantos].monto;
+                    iAdelantos++;
+                }
+                const consumido = Math.min(disponibles, pago.monto);
+                disponibles -= consumido;
+                return { fecha: pago.fecha, monto: pago.monto, neto: pago.monto - consumido };
+            });
+
+            return {
+                trabajador: fila.trabajador,
+                salarioTotal: pagosNeto.filter((p) => enPeriodo(p.fecha)).reduce((s, p) => s + p.monto, 0),
+                adelantos: fila.adelantos.filter((a) => enPeriodo(a.fecha)).reduce((s, a) => s + a.monto, 0),
+                netoLiquidado: pagosNeto.filter((p) => enPeriodo(p.fecha)).reduce((s, p) => s + p.neto, 0),
+                totalPagar: pagosNeto.filter((p) => enPeriodo(p.fecha)).reduce((s, p) => s + p.neto, 0)
+            };
+        })
+        .filter((f) => f.salarioTotal > 0 || f.adelantos > 0)
         .sort((a, b) => a.trabajador.localeCompare(b.trabajador, "es"));
 }
 

@@ -147,7 +147,7 @@ export function renderizarReporteHtml(r) {
                 <tr class="fila-total"><td>Utilidad Neta</td><td class="num">${formatearMoneda(r.utilidadNeta)}</td></tr>
             </tbody>
         </table>
-        <p class="nota">Nota: Utilidad = Ventas de Contado − Gastos (Insumos) − Total Adelantos Entregados. Los fiados y abonos no alteran esta fórmula (efectivo real de caja). Detalle Personal — Salario Total: <b>${formatearMoneda(r.totalPagosPersonal)}</b> · Adelantos: <b>${formatearMoneda(r.totalAdelantos)}</b></p>
+        <p class="nota">Nota: Utilidad = Ventas de Contado − Gastos (Insumos) − Personal entregado. Cada liquidación descuenta los adelantos históricos del empleado (previos a la fecha de pago) y refleja el Neto Real entregado (Salario Bruto − Adelantos aplicados); los adelantos del período se descuentan por separado. Un adelanto solo se descuenta una vez y los de días anteriores no vuelven a descontarse (ya afectaron la caja en su momento). Los fiados y abonos no alteran esta fórmula (efectivo real de caja). Detalle Personal — Salario Bruto: <b>${formatearMoneda(r.totalPagosPersonal)}</b> · Adelantos: <b>${formatearMoneda(r.totalAdelantos)}</b> · Neto Liquidado: <b>${formatearMoneda(r.netoLiquidado || 0)}</b></p>
 
         <h2 class="seccion">Pagos por Trabajador</h2>
         <table>
