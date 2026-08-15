@@ -5,6 +5,7 @@
   "description": "Sistema de gestión de Panadería Familiar (ventas, inventario, personal, reportes)",
   "scripts": {
     "config": "node scripts/generate-config.js",
+    "build": "npm run config",
     "verify": "node --check scripts/generate-config.js && node --check js/config.js && node --check js/firebase-config.js && node --check js/auth.js && node --check js/session.js && node --check js/theme.js && node --check js/login.js && node --check js/ventas.js && node --check js/reportes.js && node --check js/inventario.js && node --check js/personal.js && node --check js/utils.js && node --check js/ui.js && node --check js/reporte-impresion.js && node --check sw.js && node --check backend/functions/index.js"
   },
   "dependencies": {
