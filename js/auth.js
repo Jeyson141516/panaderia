@@ -1,5 +1,5 @@
 /* ============================================================
-   Autenticación y Route Guard — Panadería Familiar
+   Autenticación y Route Guard — Panadería El Vacán
    ------------------------------------------------------------
    - Usa Firebase Authentication (método Correo/Contraseña).
    - La sesión la gestiona Firebase automáticamente (token +

@@ -1,5 +1,5 @@
 /* ============================================================
-   Sistema de temas (Modo Claro / Modo Oscuro) — Panadería Familiar
+   Sistema de temas (Modo Claro / Modo Oscuro) — Panadería El Vacán
    ------------------------------------------------------------
    - La elección del usuario se guarda en localStorage
      (clave 'panaderia-tema') y se conserva entre páginas.

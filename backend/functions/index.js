@@ -1,5 +1,5 @@
 /* ============================================================
-   API segura (Cloud Functions v2) — Panadería Familiar
+   API segura (Cloud Functions v2) — Panadería El Vacán
    ------------------------------------------------------------
    - CORS estricto: solo origenes listados en .env
      (CORS_ALLOWED_ORIGINS, separados por comas).

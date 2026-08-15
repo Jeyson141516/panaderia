@@ -2,7 +2,7 @@
   "name": "panaderia-functions",
   "version": "1.0.0",
   "private": true,
-  "description": "Cloud Functions de Panadería Familiar: API con CORS estricto y validación de datos en el servidor.",
+  "description": "Cloud Functions de Panadería El Vacán: API con CORS estricto y validación de datos en el servidor.",
   "main": "index.js",
   "engines": {
     "node": "20"

@@ -1,5 +1,5 @@
 /* ============================================================
-   Generador de configuración — Panadería Familiar
+   Generador de configuración — Panadería El Vacán
    ------------------------------------------------------------
    Lee las variables de entorno desde el archivo .env (local) y/o
    desde process.env (Vercel) y genera:

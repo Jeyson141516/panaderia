@@ -1,5 +1,5 @@
 /* ============================================================
-   Panadería Familiar — Sistema de diseño Glassmorphism
+   Panadería El Vacán — Sistema de diseño Glassmorphism
    ============================================================ */
 :root {
     --brand-1: #6366f1;
@@ -121,11 +121,7 @@ nav .brand .logo {
     width: 44px;
     height: 44px;
     border-radius: 14px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, .85), rgba(139, 92, 246, .85));
-    border: 1px solid rgba(255, 255, 255, .22);
-    display: grid;
-    place-items: center;
-    font-size: 1.35rem;
+    object-fit: cover;
     box-shadow: var(--shadow-md);
     flex-shrink: 0;
 }
@@ -1577,11 +1573,8 @@ input[type="submit"]:disabled:hover {
     height: 76px;
     margin: 0 auto 20px;
     border-radius: 22px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, .9), rgba(139, 92, 246, .9));
-    border: 1px solid rgba(255, 255, 255, .4);
-    display: grid;
-    place-items: center;
-    font-size: 2.2rem;
+    object-fit: cover;
+    display: block;
     box-shadow: var(--shadow-lg);
 }
 

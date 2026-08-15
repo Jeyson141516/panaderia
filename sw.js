@@ -1,5 +1,5 @@
 /* ============================================================
-   Service Worker — Panadería Familiar
+   Service Worker — Panadería El Vacán
    ------------------------------------------------------------
    Estrategia de caché:
    - Navegaciones (HTML): red primero, caché como respaldo offline.

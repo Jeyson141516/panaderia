@@ -1,5 +1,5 @@
 /* ============================================================
-   Control de inactividad de sesión — Panadería Familiar
+   Control de inactividad de sesión — Panadería El Vacán
    ------------------------------------------------------------
    - Si no hay actividad (mouse, teclado, scroll, toque) durante
      SESSION_TIMEOUT_MIN minutos, se dispara el callback y la
