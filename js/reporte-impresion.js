@@ -47,6 +47,53 @@ function obtenerReporte() {
     }
 }
 
+function pintarInsightsHtml(r) {
+    const ins = r.insights;
+    const seccion = '<h2 class="seccion">Insights Inteligentes</h2>';
+
+    // Sin datos suficientes: se oculta por completo para que las tarjetas
+    // financieras ocupen su posición original.
+    if (!ins || ins.tipo === 'insuficiente') {
+        return '';
+    }
+
+    if (ins.tipo === 'semana') {
+        return `
+            <div id="insightsContainer" class="insights">
+                ${seccion}
+                <div class="insights-grid">
+                    <div class="insight-card">
+                        <span class="insight-lbl">Día con mayor facturación</span>
+                        <span class="insight-val">${escapeHtml(ins.diaEstrella.nombre)}</span>
+                        <span class="insight-monto">${formatearMoneda(ins.diaEstrella.monto)}</span>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    return `
+        <div id="insightsContainer" class="insights">
+            ${seccion}
+            <div class="insights-grid">
+                <div class="insight-card">
+                    <span class="insight-lbl">Día con mayor facturación</span>
+                    <span class="insight-val">${escapeHtml(ins.mejorDiaMes.nombre)}</span>
+                    <span class="insight-monto">${formatearMoneda(ins.mejorDiaMes.monto)}</span>
+                </div>
+                <div class="insight-card">
+                    <span class="insight-lbl">Semana con mayor facturación</span>
+                    <span class="insight-val">Semana ${ins.semanaGanadora.numero}</span>
+                    <span class="insight-monto">${formatearMoneda(ins.semanaGanadora.monto)}</span>
+                </div>
+                <div class="insight-card">
+                    <span class="insight-lbl">Mejor día de la mejor semana</span>
+                    <span class="insight-val">${escapeHtml(ins.mejorDiaSemana.nombre)}</span>
+                    <span class="insight-monto">${formatearMoneda(ins.mejorDiaSemana.monto)}</span>
+                </div>
+            </div>
+        </div>`;
+}
+
 function pintarDocumento() {
     const r = obtenerReporte();
     if (!r) {
@@ -90,6 +137,8 @@ function pintarDocumento() {
             <span>Período: <b>${etiquetaPeriodo(r.periodo)}</b> · Del <b>${r.fechaInicio || 'inicio'}</b> al <b>${r.fechaFin || 'hoy'}</b> · Estado: <b>${etiquetaEstado(r.estado)}</b></span>
             <span class="fecha">Generado: ${fechaGeneracion}</span>
         </div>
+
+        ${pintarInsightsHtml(r)}
 
         <h2 class="seccion">Resumen Financiero</h2>
         <table>
@@ -318,6 +367,18 @@ function descargarPdf() {
     pdf.text(`Período: ${etiquetaPeriodo(r.periodo)}  ·  Del ${r.fechaInicio || 'inicio'} al ${r.fechaFin || 'hoy'}  ·  Estado: ${etiquetaEstado(r.estado)}`, MARGEN, y);
     pdf.text(`Generado: ${new Date().toLocaleString('es-EC')}`, MARGEN + ANCHO, y, { align: 'right' });
     y += 6;
+
+    /* ---------- Insights Inteligentes ---------- */
+    if (r.insights && r.insights.tipo !== 'insuficiente') {
+        encabezadoSeccion('Insights Inteligentes');
+        if (r.insights.tipo === 'semana') {
+            textoFlujo(`Día con mayor facturación: ${r.insights.diaEstrella.nombre} — ${formatearMoneda(r.insights.diaEstrella.monto)}`, { size: 9, color: NEGRO });
+        } else {
+            textoFlujo(`Día con mayor facturación: ${r.insights.mejorDiaMes.nombre} — ${formatearMoneda(r.insights.mejorDiaMes.monto)}`, { size: 9, color: NEGRO });
+            textoFlujo(`Semana con mayor facturación: Semana ${r.insights.semanaGanadora.numero} — ${formatearMoneda(r.insights.semanaGanadora.monto)}`, { size: 9, color: NEGRO });
+            textoFlujo(`Mejor día de la mejor semana: ${r.insights.mejorDiaSemana.nombre} — ${formatearMoneda(r.insights.mejorDiaSemana.monto)}`, { size: 9, color: NEGRO });
+        }
+    }
 
     /* ---------- Resumen Financiero (tabla clásica de 2 columnas) ---------- */
     encabezadoSeccion('Resumen Financiero');

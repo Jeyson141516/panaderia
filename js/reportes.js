@@ -23,6 +23,7 @@ const lblResUtilidad = document.getElementById('lblResUtilidad');
 const btnCsv = document.getElementById('btnCsv');
 const tablaPagosTrabajadores = document.getElementById('tablaPagosTrabajadores');
 const tablaGastosPorProducto = document.getElementById('tablaGastosPorProducto');
+const insightsContainer = document.getElementById('insightsContainer');
 
 const fechaInicioInput = document.getElementById('fechaInicio');
 const fechaFinInput = document.getElementById('fechaFin');
@@ -174,6 +175,8 @@ async function cargarReporte() {
         const totalFacturado = totalContado + totalCredito;
         const totalPendiente = Math.max(0, totalCredito - totalAbonos);
 
+        const insights = calcularInsightsDeVenta({ ventas: querySnapshot.docs.map((d) => d.data()), periodo: periodoFiltro.value });
+
         ultimoReporte = {
             fechaInicio: fechaInicioInput.value,
             fechaFin: fechaFinInput.value,
@@ -193,7 +196,8 @@ async function cargarReporte() {
             utilidadNeta,
             gastosPorProducto,
             pagosTrabajadores,
-            clientes: Object.entries(clientesMap).sort((a, b) => b[1] - a[1]).slice(0, 5)
+            clientes: Object.entries(clientesMap).sort((a, b) => b[1] - a[1]).slice(0, 5),
+            insights
         };
 
         lblResIngresosContado.textContent = formatearMoneda(ingresosContado);
@@ -206,6 +210,7 @@ async function cargarReporte() {
 
         renderPagosTrabajadores(pagosTrabajadores);
         renderGastosPorProducto(gastosPorProducto);
+        renderInsights(insights);
 
         lblContado.textContent = formatearMoneda(totalContado);
         lblCredito.textContent = formatearMoneda(totalCredito);
@@ -237,6 +242,103 @@ async function cargarReporte() {
     } finally {
         btnConsultar.disabled = false;
     }
+}
+
+const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+function fechaVentaLocal(venta) {
+    const fecha = venta.fecha && venta.fecha.toDate
+        ? venta.fecha.toDate()
+        : (venta.fecha instanceof Date ? venta.fecha : new Date(venta.fecha));
+    return Number.isNaN(fecha.getTime()) ? null : fecha;
+}
+
+function calcularInsightsDeVenta(data) {
+    const ventas = (data && data.ventas) || (Array.isArray(data) ? data : []);
+    const periodo = (data && data.periodo) || '';
+
+    // Solo cuenta la facturación real (contado + crédito), igual que el "Total Facturado".
+    const facturadas = [];
+    ventas.forEach((venta) => {
+        const estado = venta.estadoPago || 'pagado';
+        if (estado !== 'pagado' && estado !== 'debe') return;
+        const fecha = fechaVentaLocal(venta);
+        if (!fecha) return;
+        facturadas.push({
+            monto: Number(venta.totalVenta) || 0,
+            anio: fecha.getFullYear(),
+            mes: fecha.getMonth() + 1,
+            dia: fecha.getDate(),
+            nombreDia: DIAS_SEMANA[fecha.getDay()],
+            fecha
+        });
+    });
+
+    if (facturadas.length === 0) {
+        return { tipo: 'insuficiente' };
+    }
+
+    // Agrupa por día específico (clave YYYY-MM-DD).
+    const porDia = new Map();
+    facturadas.forEach((v) => {
+        const clave = `${v.anio}-${String(v.mes).padStart(2, '0')}-${String(v.dia).padStart(2, '0')}`;
+        const entrada = porDia.get(clave) || { ...v, fechaClave: clave, monto: 0 };
+        entrada.monto += v.monto;
+        porDia.set(clave, entrada);
+    });
+    const dias = [...porDia.values()];
+
+    if (periodo === 'semana') {
+        // Día Estrella: día de la semana con mayor facturación acumulada.
+        const porDiaSemana = new Map();
+        facturadas.forEach((v) => {
+            porDiaSemana.set(v.nombreDia, (porDiaSemana.get(v.nombreDia) || 0) + v.monto);
+        });
+        let diaEstrella = null;
+        porDiaSemana.forEach((monto, nombre) => {
+            if (!diaEstrella || monto > diaEstrella.monto) diaEstrella = { nombre, monto };
+        });
+        return { tipo: 'semana', diaEstrella };
+    }
+
+    if (periodo === 'mes') {
+        // Semana del mes: 1 = días 1-7, 2 = 8-14, 3 = 15-21, 4 = 22-28, 5 = 29+.
+        const porSemana = new Map();
+        const diasPorSemana = new Map();
+        dias.forEach((d) => {
+            const numero = Math.floor((d.dia - 1) / 7) + 1;
+            porSemana.set(numero, (porSemana.get(numero) || 0) + d.monto);
+            if (!diasPorSemana.has(numero)) diasPorSemana.set(numero, []);
+            diasPorSemana.get(numero).push(d);
+        });
+
+        let semanaGanadora = null;
+        porSemana.forEach((monto, numero) => {
+            if (!semanaGanadora || monto > semanaGanadora.monto) semanaGanadora = { numero, monto };
+        });
+
+        // Mejor día específico dentro de la semana ganadora.
+        const diasSemanaGanadora = diasPorSemana.get(semanaGanadora.numero) || [];
+        let mejorDiaSemana = null;
+        diasSemanaGanadora.forEach((d) => {
+            if (!mejorDiaSemana || d.monto > mejorDiaSemana.monto) mejorDiaSemana = d;
+        });
+
+        // Día del mes con mayor facturación.
+        let mejorDiaMes = null;
+        dias.forEach((d) => {
+            if (!mejorDiaMes || d.monto > mejorDiaMes.monto) mejorDiaMes = d;
+        });
+
+        return {
+            tipo: 'mes',
+            semanaGanadora: { numero: semanaGanadora.numero, monto: semanaGanadora.monto },
+            mejorDiaMes: { nombre: mejorDiaMes.nombreDia, fecha: mejorDiaMes.fechaClave, monto: mejorDiaMes.monto },
+            mejorDiaSemana: { nombre: mejorDiaSemana.nombreDia, fecha: mejorDiaSemana.fechaClave, monto: mejorDiaSemana.monto }
+        };
+    }
+
+    return { tipo: 'insuficiente' };
 }
 
 function agruparGastosPorProducto(gastosSnap) {
@@ -312,6 +414,49 @@ function renderGastosPorProducto(items) {
             <td>${escapeHtml(g.producto)}</td>
             <td class="monto-cell">${formatearMoneda(g.totalInvertido)}</td>
         </tr>`).join("");
+}
+
+function renderInsights(insights) {
+    if (!insightsContainer) return;
+
+    if (!insights || insights.tipo === 'insuficiente') {
+        insightsContainer.innerHTML = '';
+        insightsContainer.classList.add('oculto');
+        return;
+    }
+
+    const tarjetas = [];
+
+    if (insights.tipo === 'semana') {
+        tarjetas.push(`
+            <div class="insight-card">
+                <span class="insight-lbl">Día con mayor facturación</span>
+                <span class="insight-val">${escapeHtml(insights.diaEstrella.nombre)}</span>
+                <span class="insight-monto">${formatearMoneda(insights.diaEstrella.monto)}</span>
+            </div>`);
+    } else if (insights.tipo === 'mes') {
+        tarjetas.push(`
+            <div class="insight-card">
+                <span class="insight-lbl">Día con mayor facturación</span>
+                <span class="insight-val">${escapeHtml(insights.mejorDiaMes.nombre)}</span>
+                <span class="insight-monto">${formatearMoneda(insights.mejorDiaMes.monto)}</span>
+            </div>
+            <div class="insight-card">
+                <span class="insight-lbl">Semana con mayor facturación</span>
+                <span class="insight-val">Semana ${insights.semanaGanadora.numero}</span>
+                <span class="insight-monto">${formatearMoneda(insights.semanaGanadora.monto)}</span>
+            </div>
+            <div class="insight-card">
+                <span class="insight-lbl">Mejor día de la mejor semana</span>
+                <span class="insight-val">${escapeHtml(insights.mejorDiaSemana.nombre)}</span>
+                <span class="insight-monto">${formatearMoneda(insights.mejorDiaSemana.monto)}</span>
+            </div>`);
+    }
+
+    insightsContainer.innerHTML = `
+        <h2 class="section-title">🧠 Insights Inteligentes</h2>
+        <div class="insights-grid">${tarjetas.join('')}</div>`;
+    insightsContainer.classList.remove('oculto');
 }
 
 function descargarCsv() {
