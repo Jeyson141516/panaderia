@@ -5,7 +5,7 @@
      SESSION_TIMEOUT_MIN minutos, se dispara el callback y la
      sesión se cierra automáticamente.
    - El tiempo se lee de config.js (generado desde .env).
-   ============================================================ */
+   ============================================================  */
 import { SESSION_TIMEOUT_MIN } from './config.js';
 
 const ACTIVIDAD_MS = Math.max(1, SESSION_TIMEOUT_MIN) * 60 * 1000;
