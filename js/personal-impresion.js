@@ -2,12 +2,33 @@ const CLAVE_REPORTE = 'panaderia:reporte-personal-actual';
 const params = new URLSearchParams(location.search);
 const accionAuto = params.get('accion');
 
+const LOGO_URL = 'img/icono.jpg';
+const ALTO_LOGO_MM = 15;
+
 const estadoMensaje = document.getElementById('estadoMensaje');
 const reporteDocumento = document.getElementById('reporteDocumento');
 const btnImprimir = document.getElementById('btnImprimir');
 const btnDescargar = document.getElementById('btnDescargar');
 const btnVolver = document.getElementById('btnVolver');
 const btnIrPersonal = document.getElementById('btnIrPersonal');
+
+let logoDataUrl = null;
+const promesaLogo = (async () => {
+    try {
+        const respuesta = await fetch(LOGO_URL);
+        if (!respuesta.ok) return null;
+        const blob = await respuesta.blob();
+        return await new Promise((resolve) => {
+            const lector = new FileReader();
+            lector.onload = () => resolve(lector.result);
+            lector.onerror = () => resolve(null);
+            lector.readAsDataURL(blob);
+        });
+    } catch (e) {
+        return null;
+    }
+})();
+promesaLogo.then((dataUrl) => { logoDataUrl = dataUrl; });
 
 function formatearMoneda(valor) {
     const numero = Number(valor) || 0;
@@ -62,9 +83,12 @@ function pintarDocumento() {
 
     reporteDocumento.innerHTML = `
         <header class="membrete">
-            <div>
-                <div class="negocio">Panadería Familiar</div>
-                <div class="subtitulo">Documento de Personal</div>
+            <div class="membrete-izq">
+                <img src="img/icono.jpg" class="logo-reporte" alt="Logo de Panadería El Vacán">
+                <div>
+                    <div class="negocio">Panadería El Vacán</div>
+                    <div class="subtitulo">Documento de Personal</div>
+                </div>
             </div>
             <div class="titulo-doc">Reporte de Empleados y Adelantos</div>
         </header>
@@ -91,7 +115,7 @@ function pintarDocumento() {
         </table>
 
         <footer class="pie">
-            <span>Panadería Familiar · Reporte de Empleados y Adelantos</span>
+            <span>Panadería El Vacán · Reporte de Empleados y Adelantos</span>
             <span>Página 1 de 1</span>
         </footer>
     `;
@@ -123,7 +147,7 @@ function esperarJsPDF(tiempoMax = 8000) {
     });
 }
 
-function descargarPdf() {
+async function descargarPdf() {
     const r = obtenerReporte();
     if (!r) return;
 
@@ -131,6 +155,8 @@ function descargarPdf() {
         alert('La librería de PDF no cargó. Revisa tu conexión e inténtalo de nuevo.');
         return;
     }
+
+    await promesaLogo;
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -257,21 +283,32 @@ function descargarPdf() {
     }
 
     /* ---------- Cabecera corporativa ---------- */
+    let anchoLogo = 0;
+    if (logoDataUrl) {
+        try {
+            const props = pdf.getImageProperties(logoDataUrl);
+            anchoLogo = ALTO_LOGO_MM * (props.width / props.height);
+        } catch (e) {
+            anchoLogo = ALTO_LOGO_MM;
+        }
+        pdf.addImage(logoDataUrl, 'JPEG', MARGEN, currentY, anchoLogo, ALTO_LOGO_MM);
+    }
+    const xTexto = MARGEN + anchoLogo + 4;
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(16);
     pdf.setTextColor(...NEGRO);
-    pdf.text('Panadería Familiar', MARGEN, currentY);
+    pdf.text('Panadería El Vacán', xTexto, currentY + 6.4);
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(8);
     pdf.setTextColor(...GRIS);
-    pdf.text('Documento de Personal', MARGEN, currentY + 5.2);
+    pdf.text('Documento de Personal', xTexto, currentY + 10.4);
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(14);
     pdf.setTextColor(...NEGRO);
-    pdf.text('Reporte de Empleados y Adelantos', MARGEN + ANCHO, currentY + 0.8, { align: 'right' });
+    pdf.text('Reporte de Empleados y Adelantos', MARGEN + ANCHO, currentY + 7.4, { align: 'right' });
 
     /* Línea divisoria sólida */
-    currentY += 10;
+    currentY += ALTO_LOGO_MM + 4;
     pdf.setDrawColor(...NEGRO);
     pdf.setLineWidth(1.1);
     pdf.line(MARGEN, currentY, MARGEN + ANCHO, currentY);
@@ -334,7 +371,7 @@ function descargarPdf() {
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(8);
         pdf.setTextColor(...GRIS_SUAVE);
-        pdf.text('Panadería Familiar · Reporte de Empleados y Adelantos', MARGEN, yPie);
+        pdf.text('Panadería El Vacán · Reporte de Empleados y Adelantos', MARGEN, yPie);
         pdf.text(`Página ${i} de ${totalPaginas}`, 210 - MARGEN, yPie, { align: 'right' });
     }
 
@@ -353,7 +390,7 @@ if (accionAuto === 'descargar' && obtenerReporte()) {
     (async () => {
         await esperarJsPDF();
         if (typeof window.jspdf !== 'undefined') {
-            descargarPdf();
+            await descargarPdf();
             setTimeout(() => window.close(), 1200);
         } else {
             estadoMensaje.querySelector('h2').textContent = 'No se pudo generar el PDF';
