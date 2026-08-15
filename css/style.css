@@ -854,6 +854,10 @@ input[type="submit"]:disabled:hover {
     margin-bottom: 14px;
 }
 
+.gastos-filtros .filtros-rapidos-dia {
+    margin-bottom: 14px;
+}
+
 /* Tarjeta del total general de gastos mostrados en la tabla */
 .total-gastos {
     display: flex;
@@ -906,6 +910,62 @@ input[type="submit"]:disabled:hover {
 
 .ventas-dia-header h3 {
     margin: 0;
+}
+
+/* Filtros rápidos de fecha junto al calendario (Hoy / Ayer / Antes de ayer) */
+.filtros-rapidos-dia {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.filtros-rapidos-dia .fecha-dia-input {
+    margin-bottom: 0;
+}
+
+.btn-rapido-dia {
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 8px 13px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--glass-bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    line-height: 1;
+    transition: background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.btn-rapido-dia:hover {
+    background: rgba(255, 255, 255, .9);
+    color: var(--text);
+    border-color: rgba(99, 102, 241, .4);
+}
+
+.btn-rapido-dia.activo {
+    background: linear-gradient(135deg, var(--brand-1), var(--brand-2));
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, .35);
+}
+
+:root[data-theme="oscuro"] .btn-rapido-dia {
+    background: rgba(255, 255, 255, .06);
+    border-color: var(--border);
+}
+
+:root[data-theme="oscuro"] .btn-rapido-dia:hover {
+    background: rgba(255, 255, 255, .12);
+    color: var(--text);
+}
+
+:root[data-theme="oscuro"] .btn-rapido-dia.activo {
+    background: linear-gradient(135deg, var(--brand-1), var(--brand-2));
+    box-shadow: 0 4px 16px rgba(139, 92, 246, .4);
+    color: #fff;
 }
 
 /* Contador en tiempo real del total cobrado (solo Contado) */

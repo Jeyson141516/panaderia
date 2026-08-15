@@ -8,6 +8,7 @@ const tablaGastos = document.getElementById('tablaGastos');
 const busquedaGasto = document.getElementById('busquedaGasto');
 const fechaFiltroGasto = document.getElementById('fechaFiltroGasto');
 const totalGastosEl = document.getElementById('totalGastos');
+const botonesRapidosGasto = Array.from(document.querySelectorAll('.btn-rapido-dia'));
 
 const productoBusqueda = document.getElementById('productoBusqueda');
 const btnNuevoProducto = document.getElementById('btnNuevoProducto');
@@ -401,9 +402,26 @@ busquedaGasto.addEventListener('input', (e) => {
     renderGastos();
 });
 
+function fechaOffsetLocal(dias) {
+    const d = new Date();
+    d.setDate(d.getDate() - dias);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 fechaFiltroGasto.addEventListener('change', (e) => {
     filtroGastoDia = e.target.value;
+    botonesRapidosGasto.forEach((b) => b.classList.remove('activo'));
     renderGastos();
+});
+
+botonesRapidosGasto.forEach((btn) => {
+    btn.addEventListener('click', () => {
+        const dias = parseInt(btn.dataset.dias, 10) || 0;
+        fechaFiltroGasto.value = fechaOffsetLocal(dias);
+        filtroGastoDia = fechaFiltroGasto.value;
+        botonesRapidosGasto.forEach((b) => b.classList.toggle('activo', b === btn));
+        renderGastos();
+    });
 });
 
 cargarInventario();

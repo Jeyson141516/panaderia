@@ -32,6 +32,7 @@ const tablaVentasPagado = document.getElementById('tablaVentasPagado');
 const tablaVentasDebe = document.getElementById('tablaVentasDebe');
 const buscadorVentasDia = document.getElementById('buscadorVentasDia');
 const fechaFiltroDia = document.getElementById('fechaFiltroDia');
+const botonesRapidosDia = Array.from(document.querySelectorAll('.btn-rapido-dia'));
 const totalDiaContado = document.getElementById('totalDiaContado');
 const ventasDiaCache = [];
 let saldosMap = {};
@@ -45,6 +46,33 @@ function fechaHoyLocal() {
     const hoy = new Date();
     return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
 }
+
+function fechaOffsetLocal(dias) {
+    const d = new Date();
+    d.setDate(d.getDate() - dias);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function marcarRapidoDiaActivo(fecha) {
+    botonesRapidosDia.forEach((btn) => {
+        const dias = parseInt(btn.dataset.dias, 10) || 0;
+        btn.classList.toggle('activo', fecha === fechaOffsetLocal(dias));
+    });
+}
+
+function desmarcarRapidosDia() {
+    botonesRapidosDia.forEach((btn) => btn.classList.remove('activo'));
+}
+
+function aplicarRapidoDia(btn) {
+    const dias = parseInt(btn.dataset.dias, 10) || 0;
+    fechaFiltroDia.value = fechaOffsetLocal(dias);
+    botonesRapidosDia.forEach((b) => b.classList.toggle('activo', b === btn));
+    localStorage.setItem(CLAVE_DIA_CONSULTA, fechaFiltroDia.value);
+    cargarVentasDelDia();
+}
+
+botonesRapidosDia.forEach((btn) => btn.addEventListener('click', () => aplicarRapidoDia(btn)));
 
 function formatearFechaLocal(fecha) {
     const d = fecha instanceof Date ? fecha : new Date(fecha);
@@ -283,6 +311,7 @@ function restaurarDiaConsultado() {
     const guardado = localStorage.getItem(CLAVE_DIA_CONSULTA);
     const valido = guardado && /^\d{4}-\d{2}-\d{2}$/.test(guardado);
     fechaFiltroDia.value = valido ? guardado : fechaHoyLocal();
+    marcarRapidoDiaActivo(fechaFiltroDia.value);
 }
 
 fechaFiltroDia.addEventListener('change', () => {
@@ -291,6 +320,7 @@ fechaFiltroDia.addEventListener('change', () => {
     if (!fechaFiltroDia.value) {
         fechaFiltroDia.value = fechaHoyLocal();
     }
+    desmarcarRapidosDia();
     localStorage.setItem(CLAVE_DIA_CONSULTA, fechaFiltroDia.value);
     cargarVentasDelDia();
 });

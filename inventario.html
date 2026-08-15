@@ -77,7 +77,12 @@
             <h3>🧾 Historial de Gastos Realizados</h3>
             <div class="gastos-filtros">
                 <input type="text" id="busquedaGasto" class="inventory-search" placeholder="🔍 Buscar por producto o concepto...">
-                <input type="date" id="fechaFiltroGasto" class="fecha-dia-input" title="Filtrar por un día específico (vacío = todos)">
+                <div class="filtros-rapidos-dia">
+                    <button type="button" class="btn-rapido-dia" data-dias="0" title="Ver gastos de hoy">Hoy</button>
+                    <button type="button" class="btn-rapido-dia" data-dias="1" title="Ver gastos de ayer">Ayer</button>
+                    <button type="button" class="btn-rapido-dia" data-dias="2" title="Ver gastos de antes de ayer">Antes de ayer</button>
+                    <input type="date" id="fechaFiltroGasto" class="fecha-dia-input" title="Filtrar por un día específico (vacío = todos)">
+                </div>
                 <div class="total-gastos" title="Total de los gastos mostrados en la tabla">
                     <span class="total-gastos-label">Total General</span>
                     <span id="totalGastos" class="total-gastos-monto">$0.00</span>
