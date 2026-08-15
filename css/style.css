@@ -46,7 +46,7 @@
 
 html {
     -webkit-text-size-adjust: 100%;
-    overscroll-behavior-y: none;
+    overscroll-behavior-y: auto;
     background-color: var(--page-bg);
 }
 
@@ -55,7 +55,7 @@ body {
     background: linear-gradient(120deg, var(--bg-1) 0%, var(--bg-2) 48%, var(--bg-3) 100%);
     background-attachment: fixed;
     background-color: var(--page-bg);
-    overscroll-behavior-y: none;
+    overscroll-behavior-y: auto;
     color: var(--text);
     display: flex;
     min-height: 100vh;
