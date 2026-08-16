@@ -397,6 +397,10 @@ select {
     transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
 }
 
+input[type="date"] {
+    color-scheme: light;
+}
+
 .form-group input:focus,
 .form-group select:focus,
 input:focus,
@@ -868,7 +872,8 @@ input[type="submit"]:disabled:hover {
     margin-bottom: 14px;
 }
 
-.gastos-filtros .filtros-rapidos-dia {
+.gastos-filtros .filtros-rapidos-dia,
+.gastos-filtros .filtro-rango {
     margin-bottom: 14px;
 }
 
@@ -994,8 +999,33 @@ input[type="submit"]:disabled:hover {
     flex-wrap: wrap;
 }
 
-.filtros-rapidos-dia .fecha-dia-input {
+.filtros-rapidos-dia .fecha-dia-input,
+.filtro-rango-item .fecha-dia-input {
     margin-bottom: 0;
+}
+
+/* Rango de fechas (Desde - Hasta) para el historial de gastos */
+.filtro-rango {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filtro-rango-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.filtro-rango-item .fecha-dia-input {
+    max-width: 160px;
 }
 
 .btn-rapido-dia {
@@ -2224,6 +2254,11 @@ nav, main {
     background: rgba(26, 30, 44, 0.82);
     color: var(--text);
     border-color: var(--border);
+}
+
+:root[data-theme="oscuro"] input[type="date"] {
+    color-scheme: dark;
+    color: #fff;
 }
 
 :root[data-theme="oscuro"] .form-group input:focus,

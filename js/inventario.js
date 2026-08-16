@@ -7,6 +7,8 @@ const formGasto = document.getElementById('formGasto');
 const tablaGastos = document.getElementById('tablaGastos');
 const busquedaGasto = document.getElementById('busquedaGasto');
 const fechaFiltroGasto = document.getElementById('fechaFiltroGasto');
+const fechaDesdeGasto = document.getElementById('fechaDesdeGasto');
+const fechaHastaGasto = document.getElementById('fechaHastaGasto');
 const totalGastosEl = document.getElementById('totalGastos');
 const botonesRapidosGasto = Array.from(document.querySelectorAll('.btn-rapido-dia'));
 
@@ -33,6 +35,8 @@ let indiceActivo = -1;
 let gastosCache = [];
 let filtroGastoTexto = "";
 let filtroGastoDia = "";
+let filtroGastoDesde = "";
+let filtroGastoHasta = "";
 
 function formatearMoneda(valor) {
     return `$${Number(valor).toFixed(2)}`;
@@ -123,7 +127,9 @@ function renderGastos() {
     const filtrados = gastosCache.filter((g) => {
         const coincideTexto = esCoincidenciaFuzzy(g.producto || g.descripcion || "", filtroGastoTexto);
         const coincideDia = !diaFiltro || diaLocal(g.fecha) === diaFiltro;
-        return coincideTexto && coincideDia;
+        const dia = diaLocal(g.fecha);
+        const coincideRango = (!filtroGastoDesde || dia >= filtroGastoDesde) && (!filtroGastoHasta || dia <= filtroGastoHasta);
+        return coincideTexto && coincideDia && coincideRango;
     });
 
     if (gastosCache.length === 0) {
@@ -408,9 +414,23 @@ function fechaOffsetLocal(dias) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function limpiarFiltroDia() {
+    filtroGastoDia = "";
+    fechaFiltroGasto.value = "";
+    botonesRapidosGasto.forEach((b) => b.classList.remove('activo'));
+}
+
+function limpiarFiltroRango() {
+    filtroGastoDesde = "";
+    filtroGastoHasta = "";
+    fechaDesdeGasto.value = "";
+    fechaHastaGasto.value = "";
+}
+
 fechaFiltroGasto.addEventListener('change', (e) => {
     filtroGastoDia = e.target.value;
     botonesRapidosGasto.forEach((b) => b.classList.remove('activo'));
+    limpiarFiltroRango();
     renderGastos();
 });
 
@@ -420,8 +440,21 @@ botonesRapidosGasto.forEach((btn) => {
         fechaFiltroGasto.value = fechaOffsetLocal(dias);
         filtroGastoDia = fechaFiltroGasto.value;
         botonesRapidosGasto.forEach((b) => b.classList.toggle('activo', b === btn));
+        limpiarFiltroRango();
         renderGastos();
     });
+});
+
+fechaDesdeGasto.addEventListener('change', (e) => {
+    filtroGastoDesde = e.target.value;
+    limpiarFiltroDia();
+    renderGastos();
+});
+
+fechaHastaGasto.addEventListener('change', (e) => {
+    filtroGastoHasta = e.target.value;
+    limpiarFiltroDia();
+    renderGastos();
 });
 
 cargarInventario();
