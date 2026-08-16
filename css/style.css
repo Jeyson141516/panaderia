@@ -868,7 +868,8 @@ input[type="submit"]:disabled:hover {
     margin-bottom: 14px;
 }
 
-.gastos-filtros .filtros-rapidos-dia {
+.gastos-filtros .filtros-rapidos-dia,
+.gastos-filtros .filtro-rango {
     margin-bottom: 14px;
 }
 
@@ -994,8 +995,33 @@ input[type="submit"]:disabled:hover {
     flex-wrap: wrap;
 }
 
-.filtros-rapidos-dia .fecha-dia-input {
+.filtros-rapidos-dia .fecha-dia-input,
+.filtro-rango-item .fecha-dia-input {
     margin-bottom: 0;
+}
+
+/* Rango de fechas (Desde - Hasta) para el historial de gastos */
+.filtro-rango {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filtro-rango-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.filtro-rango-item .fecha-dia-input {
+    max-width: 160px;
 }
 
 .btn-rapido-dia {

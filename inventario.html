@@ -86,6 +86,16 @@
                     <button type="button" class="btn-rapido-dia" data-dias="2" title="Ver gastos de antes de ayer">Antes de ayer</button>
                     <input type="date" id="fechaFiltroGasto" class="fecha-dia-input" title="Filtrar por un día específico (vacío = todos)">
                 </div>
+                <div class="filtro-rango" title="Filtrar por un rango de fechas (inclusive)">
+                    <label class="filtro-rango-item">
+                        <span>Desde</span>
+                        <input type="date" id="fechaDesdeGasto" class="fecha-dia-input" title="Fecha de inicio del rango (vacío = sin límite)">
+                    </label>
+                    <label class="filtro-rango-item">
+                        <span>Hasta</span>
+                        <input type="date" id="fechaHastaGasto" class="fecha-dia-input" title="Fecha de fin del rango (vacío = sin límite)">
+                    </label>
+                </div>
                 <div class="total-gastos" title="Total de los gastos mostrados en la tabla">
                     <span class="total-gastos-label">Total General</span>
                     <span id="totalGastos" class="total-gastos-monto">$0.00</span>
