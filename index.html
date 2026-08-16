@@ -238,6 +238,31 @@
         </div>
     </div>
 
+    <div id="modalVentaDuplicada" class="modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>⚠️ Venta duplicada</h3>
+                <button type="button" class="modal-close" id="cerrarModalDuplicada" aria-label="Cerrar">✕</button>
+            </div>
+            <p class="duplicada-alerta">Este cliente ya tiene una o más ventas registradas el día de hoy.</p>
+            <div class="abono-info-grid">
+                <div class="abono-info-box">
+                    <span class="abono-info-label">Cliente</span>
+                    <span class="abono-info-value" id="duplicadaClienteNombre">—</span>
+                </div>
+                <div class="abono-info-box">
+                    <span class="abono-info-label">Acumulado de ventas hoy</span>
+                    <span class="abono-info-value abono-deuda" id="duplicadaAcumuladoHoy">$0.00</span>
+                </div>
+            </div>
+            <p class="duplicada-pregunta">¿Estás seguro de registrar una nueva venta a este cliente?</p>
+            <div class="modal-actions">
+                <button type="button" id="cancelarModalDuplicada" class="btn-danger">Cancelar</button>
+                <button type="button" id="confirmarModalDuplicada" class="btn-success">Sí, Registrar Venta</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
     <script type="module" src="js/ventas.js"></script>

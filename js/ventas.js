@@ -394,6 +394,90 @@ tablaVentasDebe.addEventListener('click', (e) => {
     prepararAbono(btn.dataset.cliente);
 });
 
+/* ---------- Modal de advertencia por venta duplicada (mismo cliente, mismo día) ---------- */
+const modalVentaDuplicada = document.getElementById('modalVentaDuplicada');
+const duplicadaClienteNombre = document.getElementById('duplicadaClienteNombre');
+const duplicadaAcumuladoHoy = document.getElementById('duplicadaAcumuladoHoy');
+const cerrarModalDuplicada = document.getElementById('cerrarModalDuplicada');
+const cancelarModalDuplicada = document.getElementById('cancelarModalDuplicada');
+const confirmarModalDuplicada = document.getElementById('confirmarModalDuplicada');
+
+let ventaPendienteDuplicada = null;
+
+function rangoHoyLocal() {
+    const hoy = new Date();
+    return {
+        anio: hoy.getFullYear(),
+        mes: hoy.getMonth(),
+        dia: hoy.getDate(),
+        inicio: new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0, 0),
+        fin: new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59, 999)
+    };
+}
+
+/**
+ * Cuenta las ventas de HOY (fecha actual) de un cliente y el monto acumulado.
+ * Ignora el día seleccionado en el formulario: la verificación es siempre
+ * contra la fecha actual.
+ */
+async function obtenerVentasDeHoyCliente(cliente) {
+    const { anio, mes, dia, inicio, fin } = rangoHoyLocal();
+    const clienteNorm = normalizarTexto(cliente);
+
+    const snapshot = await getDocs(query(
+        collection(db, "ventas"),
+        where("fecha", ">=", inicio),
+        where("fecha", "<=", fin)
+    ));
+
+    let ventas = 0;
+    let total = 0;
+
+    snapshot.forEach((docSnap) => {
+        const v = docSnap.data();
+        const fecha = v.fecha && v.fecha.toDate ? v.fecha.toDate() : null;
+
+        if (fecha && (fecha.getFullYear() !== anio || fecha.getMonth() !== mes || fecha.getDate() !== dia)) {
+            return;
+        }
+        if (normalizarTexto(v.cliente) !== clienteNorm) return;
+
+        ventas += 1;
+        total += Number(v.totalVenta) || 0;
+    });
+
+    return { ventas, total };
+}
+
+function abrirModalVentaDuplicada(cliente, acumuladoHoy, onConfirmar) {
+    duplicadaClienteNombre.textContent = cliente;
+    duplicadaAcumuladoHoy.textContent = formatearMoneda(acumuladoHoy);
+    ventaPendienteDuplicada = onConfirmar;
+    modalVentaDuplicada.style.display = 'flex';
+    confirmarModalDuplicada.focus();
+}
+
+function cerrarModalVentaDuplicada() {
+    modalVentaDuplicada.style.display = 'none';
+    ventaPendienteDuplicada = null;
+}
+
+cerrarModalDuplicada.addEventListener('click', cerrarModalVentaDuplicada);
+cancelarModalDuplicada.addEventListener('click', cerrarModalVentaDuplicada);
+modalVentaDuplicada.addEventListener('click', (e) => {
+    if (e.target === modalVentaDuplicada) cerrarModalVentaDuplicada();
+});
+
+confirmarModalDuplicada.addEventListener('click', () => {
+    const onConfirmar = ventaPendienteDuplicada;
+    if (!onConfirmar) return;
+
+    ejecutarConBotonBloqueado(confirmarModalDuplicada, async () => {
+        cerrarModalVentaDuplicada();
+        await onConfirmar();
+    });
+});
+
 let clientesCache = [];
 let indiceActivo = -1;
 let clientesPromise = null;
@@ -692,6 +776,36 @@ guardarClienteModal.addEventListener('click', () => {
         }
     });
 });
+async function guardarVenta(cliente, cantidad, estadoPago, fechaVenta) {
+    try {
+        const total = cantidad * PRECIO_FUNDA;
+        await addDoc(collection(db, "ventas"), {
+            cliente: cliente || "Cliente General",
+            cantidadFundas: cantidad,
+            totalVenta: total,
+            estadoPago,
+            fecha: fechaVenta
+        });
+
+        toast(estadoPago === 'debe'
+            ? "¡Venta registrada como FIADA (Pendiente)!"
+            : "¡Venta registrada con éxito!");
+
+        const fechaSeleccionada = fechaVentaSelect.value;
+        formVenta.reset();
+        fechaVentaSelect.value = fechaSeleccionada;
+        estadoPagoSelect.value = "pagado";
+        cerrarSugerencias();
+        totalPagarSpan.textContent = PRECIO_FUNDA.toFixed(2);
+        clienteBusqueda.value = "";
+        ocultarInfoSaldo();
+        await cargarVentasDelDia();
+    } catch (error) {
+        console.error("Error al registrar transacción: ", error);
+        toast("Hubo un error al guardar la transacción.", "error");
+    }
+}
+
 formVenta.addEventListener('submit', (e) => {
     e.preventDefault();
 
@@ -701,38 +815,27 @@ formVenta.addEventListener('submit', (e) => {
         const fechaVenta = new Date();
         fechaVenta.setDate(fechaVenta.getDate() + offsetDiasSeleccionado());
 
+        const cantidad = validarEntero(cantidadInput.value, 1, 999);
+        if (cantidad === null) {
+            toast("Ingresa una cantidad válida de fundas (1 a 999).", "warning");
+            return;
+        }
+
+        const clienteFinal = cliente || "Cliente General";
+
         try {
-            const cantidad = validarEntero(cantidadInput.value, 1, 999);
-            if (cantidad === null) {
-                toast("Ingresa una cantidad válida de fundas (1 a 999).", "warning");
-                return;
+            const { ventas, total } = await obtenerVentasDeHoyCliente(clienteFinal);
+
+            if (ventas > 0) {
+                abrirModalVentaDuplicada(clienteFinal, total, () => {
+                    guardarVenta(clienteFinal, cantidad, estadoPago, fechaVenta);
+                });
+            } else {
+                await guardarVenta(clienteFinal, cantidad, estadoPago, fechaVenta);
             }
-
-            const total = cantidad * PRECIO_FUNDA;
-            await addDoc(collection(db, "ventas"), {
-                cliente: cliente || "Cliente General",
-                cantidadFundas: cantidad,
-                totalVenta: total,
-                estadoPago,
-                fecha: fechaVenta
-            });
-
-            toast(estadoPago === 'debe'
-                ? "¡Venta registrada como FIADA (Pendiente)!"
-                : "¡Venta registrada con éxito!");
-
-            const fechaSeleccionada = fechaVentaSelect.value;
-            formVenta.reset();
-            fechaVentaSelect.value = fechaSeleccionada;
-            estadoPagoSelect.value = "pagado";
-            cerrarSugerencias();
-            totalPagarSpan.textContent = PRECIO_FUNDA.toFixed(2);
-            clienteBusqueda.value = "";
-            ocultarInfoSaldo();
-            await cargarVentasDelDia();
         } catch (error) {
-            console.error("Error al registrar transacción: ", error);
-            toast("Hubo un error al guardar la transacción.", "error");
+            console.error("Error al verificar ventas duplicadas del día:", error);
+            toast("Hubo un error al verificar la venta.", "error");
         }
     });
 });
