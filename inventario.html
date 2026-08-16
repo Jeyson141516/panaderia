@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="css/style.css">
     <script>
         (function () {
-            try {
+            try { 
                 var t = localStorage.getItem('panaderia-tema');
                 if (t !== 'claro' && t !== 'oscuro') {
                     t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro';

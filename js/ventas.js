@@ -8,7 +8,6 @@ const PRECIO_FUNDA = 1.00;
 
 const cantidadInput = document.getElementById('cantidad');
 const totalPagarSpan = document.getElementById('totalPagar');
-const totalLabel = document.getElementById('totalLabel');
 const formVenta = document.getElementById('formVenta');
 const clienteBusqueda = document.getElementById('clienteBusqueda');
 const listaSugerencias = document.getElementById('listaSugerencias');
@@ -18,9 +17,6 @@ const btnAbonoSaldo = document.getElementById('btnAbonoSaldo');
 const estadoPagoSelect = document.getElementById('estadoPago');
 const fechaVentaSelect = document.getElementById('fechaVenta');
 const ventasDiaTitulo = document.getElementById('ventasDiaTitulo');
-const grupoCantidad = document.getElementById('grupoCantidad');
-const grupoAbono = document.getElementById('grupoAbono');
-const montoAbonoInput = document.getElementById('montoAbono');
 
 const btnAbrirModal = document.getElementById('btnAbrirModal');
 const modalCliente = document.getElementById('modalCliente');
@@ -279,29 +275,7 @@ function actualizarTotalVenta() {
     totalPagarSpan.textContent = total.toFixed(2);
 }
 
-function actualizarTotalAbono() {
-    const monto = validarMonto(montoAbonoInput.value);
-    totalPagarSpan.textContent = (monto !== null ? monto : 0).toFixed(2);
-}
-
-function actualizarFormularioAbono() {
-    const esAbono = estadoPagoSelect.value === 'abono';
-    grupoCantidad.classList.toggle('hidden', esAbono);
-    grupoAbono.classList.toggle('hidden', !esAbono);
-    cantidadInput.required = !esAbono;
-    totalLabel.textContent = esAbono ? 'Monto a Abonar' : 'Total a Pagar';
-    if (esAbono) {
-        actualizarTotalAbono();
-    } else {
-        actualizarTotalVenta();
-    }
-}
-
 cantidadInput.addEventListener('input', actualizarTotalVenta);
-
-montoAbonoInput.addEventListener('input', actualizarTotalAbono);
-
-estadoPagoSelect.addEventListener('change', actualizarFormularioAbono);
 
 const CLAVE_DIA_CONSULTA = 'panaderia-dia-consulta';
 
@@ -323,16 +297,95 @@ fechaFiltroDia.addEventListener('change', () => {
     cargarVentasDelDia();
 });
 
-function prepararAbono(cliente) {
-    clienteBusqueda.value = cliente;
-    actualizarInfoSaldo(cliente);
-    estadoPagoSelect.value = 'abono';
-    actualizarFormularioAbono();
-    montoAbonoInput.value = (saldosMap[cliente] > 0 ? saldosMap[cliente] : 0).toFixed(2);
-    actualizarTotalAbono();
-    cerrarSugerencias();
-    formVenta.scrollIntoView({ behavior: 'smooth', block: 'start' });
+/* ---------- Modal de registro de abono (cuenta por cobrar) ---------- */
+const modalAbono = document.getElementById('modalAbono');
+const abonoClienteNombre = document.getElementById('abonoClienteNombre');
+const abonoDeudaVigente = document.getElementById('abonoDeudaVigente');
+const abonoNuevoSaldo = document.getElementById('abonoNuevoSaldo');
+const montoAbonoInput = document.getElementById('montoAbono');
+const cerrarModalAbono = document.getElementById('cerrarModalAbono');
+const cancelarModalAbono = document.getElementById('cancelarModalAbono');
+const guardarPagoModal = document.getElementById('guardarPagoModal');
+
+let abonoClienteSeleccionado = null;
+let abonoDeudaActual = 0;
+
+function actualizarSaldoRestante() {
+    const monto = validarMonto(montoAbonoInput.value, 0.01, 1000000);
+    const abonado = monto !== null ? monto : 0;
+    const restante = Math.max(0, abonoDeudaActual - abonado);
+    abonoNuevoSaldo.textContent = formatearMoneda(restante);
+    abonoNuevoSaldo.classList.toggle('al-dia', restante === 0);
+}
+
+function abrirModalAbono(cliente) {
+    const info = saldosNormMap[normalizarTexto(cliente)];
+    abonoClienteSeleccionado = info ? info.nombre : cliente;
+    abonoDeudaActual = Math.max(0, info ? info.saldo : 0);
+    abonoClienteNombre.textContent = abonoClienteSeleccionado;
+    abonoDeudaVigente.textContent = formatearMoneda(abonoDeudaActual);
+    montoAbonoInput.value = '';
+    if (abonoDeudaActual > 0) {
+        montoAbonoInput.max = abonoDeudaActual;
+    } else {
+        montoAbonoInput.removeAttribute('max');
+    }
+    actualizarSaldoRestante();
+    modalAbono.style.display = 'flex';
     montoAbonoInput.focus();
+}
+
+function cerrarModalAbonoHandler() {
+    modalAbono.style.display = 'none';
+    abonoClienteSeleccionado = null;
+    abonoDeudaActual = 0;
+}
+
+montoAbonoInput.addEventListener('input', actualizarSaldoRestante);
+
+cerrarModalAbono.addEventListener('click', cerrarModalAbonoHandler);
+cancelarModalAbono.addEventListener('click', cerrarModalAbonoHandler);
+modalAbono.addEventListener('click', (e) => {
+    if (e.target === modalAbono) cerrarModalAbonoHandler();
+});
+
+montoAbonoInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        guardarPagoModal.click();
+    }
+});
+
+guardarPagoModal.addEventListener('click', () => {
+    ejecutarConBotonBloqueado(guardarPagoModal, async () => {
+        const monto = validarMonto(montoAbonoInput.value, 0.01, 1000000);
+        if (monto === null) {
+            toast("Ingresa un monto de abono válido.", "warning");
+            return;
+        }
+
+        try {
+            await addDoc(collection(db, "ventas"), {
+                cliente: abonoClienteSeleccionado,
+                cantidadFundas: 0,
+                totalVenta: monto,
+                estadoPago: 'abono',
+                montoAbono: monto,
+                fecha: new Date()
+            });
+
+            cerrarModalAbonoHandler();
+            toast("¡Pago registrado! Deuda actualizada.");
+            await cargarVentasDelDia();
+        } catch (error) {
+            console.error("Error al registrar el abono:", error);
+            toast("Hubo un error al guardar el pago.", "error");
+        }
+    });
+});
+
+function prepararAbono(cliente) {
+    abrirModalAbono(cliente);
 }
 
 tablaVentasDebe.addEventListener('click', (e) => {
@@ -649,54 +702,29 @@ formVenta.addEventListener('submit', (e) => {
         fechaVenta.setDate(fechaVenta.getDate() + offsetDiasSeleccionado());
 
         try {
-            if (estadoPago === 'abono') {
-                if (!cliente) {
-                    toast("Selecciona el cliente que está abonando.", "warning");
-                    return;
-                }
-
-                const monto = validarMonto(montoAbonoInput.value, 0.01, 1000000);
-                if (monto === null) {
-                    toast("Ingresa un monto de abono válido.", "warning");
-                    return;
-                }
-
-                await addDoc(collection(db, "ventas"), {
-                    cliente,
-                    cantidadFundas: 0,
-                    totalVenta: monto,
-                    estadoPago: 'abono',
-                    montoAbono: monto,
-                    fecha: fechaVenta
-                });
-
-                toast("¡Abono registrado! Deuda actualizada.");
-            } else {
-                const cantidad = validarEntero(cantidadInput.value, 1, 999);
-                if (cantidad === null) {
-                    toast("Ingresa una cantidad válida de fundas (1 a 999).", "warning");
-                    return;
-                }
-
-                const total = cantidad * PRECIO_FUNDA;
-                await addDoc(collection(db, "ventas"), {
-                    cliente: cliente || "Cliente General",
-                    cantidadFundas: cantidad,
-                    totalVenta: total,
-                    estadoPago,
-                    fecha: fechaVenta
-                });
-
-                toast(estadoPago === 'debe'
-                    ? "¡Venta registrada como FIADA (Pendiente)!"
-                    : "¡Venta registrada con éxito!");
+            const cantidad = validarEntero(cantidadInput.value, 1, 999);
+            if (cantidad === null) {
+                toast("Ingresa una cantidad válida de fundas (1 a 999).", "warning");
+                return;
             }
+
+            const total = cantidad * PRECIO_FUNDA;
+            await addDoc(collection(db, "ventas"), {
+                cliente: cliente || "Cliente General",
+                cantidadFundas: cantidad,
+                totalVenta: total,
+                estadoPago,
+                fecha: fechaVenta
+            });
+
+            toast(estadoPago === 'debe'
+                ? "¡Venta registrada como FIADA (Pendiente)!"
+                : "¡Venta registrada con éxito!");
 
             const fechaSeleccionada = fechaVentaSelect.value;
             formVenta.reset();
             fechaVentaSelect.value = fechaSeleccionada;
             estadoPagoSelect.value = "pagado";
-            actualizarFormularioAbono();
             cerrarSugerencias();
             totalPagarSpan.textContent = PRECIO_FUNDA.toFixed(2);
             clienteBusqueda.value = "";
