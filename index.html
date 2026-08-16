@@ -71,7 +71,7 @@
                     <ul id="listaSugerencias" class="suggestion-list"></ul>
                     <div id="clienteSaldoInfo" class="saldo-info hidden">
                         <span id="clienteSaldoText" class="saldo-info-text"></span>
-                        <button type="button" id="btnAbonoSaldo" class="btn-accion btn-abonar">Registrar abono de este saldo</button>
+                        <button type="button" id="btnAbonoSaldo" class="btn-accion btn-abonar">Abonar a esta deuda</button>
                     </div>
                 </div>
 
@@ -85,13 +85,7 @@
                     <select id="estadoPago">
                         <option value="pagado">Pagado (Contado)</option>
                         <option value="debe">Fiado (Pendiente)</option>
-                        <option value="abono">Abono / Pago de Deuda</option>
                     </select>
-                </div>
-
-                <div class="form-group hidden" id="grupoAbono">
-                    <label for="montoAbono">Monto del Abono ($)</label>
-                    <input type="number" id="montoAbono" min="0.01" step="0.01" placeholder="0.00">
                 </div>
 
                 <div class="form-group">
@@ -209,6 +203,37 @@
                         <tr><td colspan="3" class="empty-cell">Cargando deudores...</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalAbono" class="modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Registrar abono de cuenta por cobrar</h3>
+                <button type="button" class="modal-close" id="cerrarModalAbono" aria-label="Cerrar">✕</button>
+            </div>
+            <div class="abono-info-grid">
+                <div class="abono-info-box">
+                    <span class="abono-info-label">Cliente</span>
+                    <span class="abono-info-value" id="abonoClienteNombre">—</span>
+                </div>
+                <div class="abono-info-box">
+                    <span class="abono-info-label">Deuda Vigente Actual</span>
+                    <span class="abono-info-value abono-deuda" id="abonoDeudaVigente">$0.00</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="montoAbono">Monto en Efectivo a Abonar ($)</label>
+                <input type="number" id="montoAbono" min="0.01" step="0.01" placeholder="0.00" inputmode="decimal">
+            </div>
+            <div class="abono-restante">
+                <span class="abono-info-label">Nuevo saldo restante</span>
+                <span class="abono-restante-monto" id="abonoNuevoSaldo">$0.00</span>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="cancelarModalAbono" class="btn-danger">Cancelar</button>
+                <button type="button" id="guardarPagoModal" class="btn-success">Guardar Pago</button>
             </div>
         </div>
     </div>
