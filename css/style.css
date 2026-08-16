@@ -397,6 +397,10 @@ select {
     transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
 }
 
+input[type="date"] {
+    color-scheme: light;
+}
+
 .form-group input:focus,
 .form-group select:focus,
 input:focus,
@@ -2227,6 +2231,11 @@ nav, main {
     background: rgba(26, 30, 44, 0.82);
     color: var(--text);
     border-color: var(--border);
+}
+
+:root[data-theme="oscuro"] input[type="date"] {
+    color-scheme: dark;
+    color: #fff;
 }
 
 :root[data-theme="oscuro"] .form-group input:focus,
