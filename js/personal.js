@@ -47,6 +47,16 @@ function inicioSemana() {
     return `${lunes.getFullYear()}-${mm}-${dd}`;
 }
 
+function finSemana() {
+    const hoy = new Date();
+    const diasDesdeLunes = (hoy.getDay() + 6) % 7;
+    const domingo = new Date(hoy);
+    domingo.setDate(hoy.getDate() + (6 - diasDesdeLunes));
+    const dd = String(domingo.getDate()).padStart(2, '0');
+    const mm = String(domingo.getMonth() + 1).padStart(2, '0');
+    return `${domingo.getFullYear()}-${mm}-${dd}`;
+}
+
 function diaDeMovimiento(fecha) {
     if (!fecha) return "";
     if (fecha.toDate) {
@@ -120,8 +130,16 @@ async function cargarMovimientos() {
 }
 
 function renderResumen(movimientos) {
+    const inicio = inicioSemana();
+    const fin = finSemana();
+
+    const semana = movimientos.filter((mv) => {
+        const dia = diaDeMovimiento(mv.fecha);
+        return dia >= inicio && dia <= fin;
+    });
+
     resumenPersonal.innerHTML = TRABAJADORES.map((nombre) => {
-        const delTrabajador = movimientos.filter((mv) => mv.trabajador === nombre);
+        const delTrabajador = semana.filter((mv) => mv.trabajador === nombre);
         const adelantos = delTrabajador.filter((x) => x.tipo === "adelanto").reduce((s, x) => s + x.monto, 0);
         const pagos = delTrabajador.filter((x) => x.tipo === "pago").reduce((s, x) => s + x.monto, 0);
         const balance = pagos - adelantos;
