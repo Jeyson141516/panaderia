@@ -1,5 +1,5 @@
 import { db } from './firebase-config.js';
-import { collection, addDoc, getDocs, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
 import { limpiarTexto, validarMonto, ejecutarConBotonBloqueado } from './utils.js';
 import { renderizarReportePersonalHtml } from './personal-impresion-render.js';
@@ -297,19 +297,22 @@ formMovimiento.addEventListener('submit', (e) => {
                 monto,
                 concepto: concepto || (tipo === "adelanto" ? "Adelanto" : "Pago de jornal"),
                 dia,
-                fecha: serverTimestamp()
+                fecha: new Date()
             });
-
-            const etiqueta = tipo === "adelanto" ? "adelanto" : "pago";
-            toast(`¡${etiqueta} de $${monto.toFixed(2)} registrado para ${trabajador}!`);
-
-            formMovimiento.reset();
-            document.getElementById('diaMovimiento').value = fechaHoy();
-            cargarMovimientos();
         } catch (error) {
-            console.error("Error al guardar movimiento: ", error);
-            toast("Hubo un error al guardar el movimiento.", "error");
+            if (error.message !== 'timeout') {
+                console.error("Error al guardar movimiento: ", error);
+                toast("Hubo un error al guardar el movimiento.", "error");
+                return;
+            }
         }
+
+        const etiqueta = tipo === "adelanto" ? "adelanto" : "pago";
+        toast(`¡${etiqueta} de $${monto.toFixed(2)} registrado para ${trabajador}!`);
+
+        formMovimiento.reset();
+        document.getElementById('diaMovimiento').value = fechaHoy();
+        cargarMovimientos().catch(() => {});
     });
 });
 

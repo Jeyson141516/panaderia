@@ -1,5 +1,5 @@
 import { db } from './firebase-config.js';
-import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
 import { normalizarTexto, limpiarTexto, validarMonto, ejecutarConBotonBloqueado, leerCache, guardarCache, esCoincidenciaFuzzy } from './utils.js';
 
@@ -82,18 +82,21 @@ formGasto.addEventListener('submit', (e) => {
                 producto: producto.nombre,
                 productoNorm: producto.nombreNorm,
                 monto,
-                fecha: serverTimestamp()
+                fecha: new Date()
             });
-
-            toast(`¡Gasto de ${monto.toFixed(2)} en ${producto.nombre} registrado!`);
-            formGasto.reset();
-            productoSeleccionado = null;
-            productoBusqueda.value = "";
-            cargarGastos();
         } catch (error) {
-            console.error("Error al guardar gasto: ", error);
-            toast("Hubo un error al registrar el gasto.", "error");
+            if (error.message !== 'timeout') {
+                console.error("Error al guardar gasto: ", error);
+                toast("Hubo un error al registrar el gasto.", "error");
+                return;
+            }
         }
+
+        toast(`¡Gasto de ${monto.toFixed(2)} en ${producto.nombre} registrado!`);
+        formGasto.reset();
+        productoSeleccionado = null;
+        productoBusqueda.value = "";
+        cargarGastos().catch(() => {});
     });
 });
 
@@ -280,26 +283,31 @@ guardarProductoModal.addEventListener('click', () => {
             return;
         }
 
+        let ref;
         try {
-            const ref = await addDoc(collection(db, "inventario"), {
+            ref = await addDoc(collection(db, "inventario"), {
                 nombre,
                 nombreNorm,
-                fechaRegistro: serverTimestamp()
+                fechaRegistro: new Date()
             });
-
-            inventarioCache.push({ id: ref.id, nombre, nombreNorm });
-            guardarCache(CACHE_INVENTARIO, inventarioCache);
-            renderInventario();
-            cerrarModalProductoHandler();
-
-            productoSeleccionado = { id: ref.id, nombre, nombreNorm };
-            productoBusqueda.value = nombre;
-            toast(`¡${nombre} agregado al inventario! Ahora registra su gasto.`);
-            document.getElementById('monto').focus();
         } catch (error) {
-            console.error("Error al guardar producto: ", error);
-            toast("Hubo un error al guardar el producto.", "error");
+            if (error.message !== 'timeout') {
+                console.error("Error al guardar producto: ", error);
+                toast("Hubo un error al guardar el producto.", "error");
+                return;
+            }
+            ref = { id: crypto.randomUUID() };
         }
+
+        inventarioCache.push({ id: ref.id, nombre, nombreNorm });
+        guardarCache(CACHE_INVENTARIO, inventarioCache);
+        renderInventario();
+        cerrarModalProductoHandler();
+
+        productoSeleccionado = { id: ref.id, nombre, nombreNorm };
+        productoBusqueda.value = nombre;
+        toast(`¡${nombre} agregado al inventario! Ahora registra su gasto.`);
+        document.getElementById('monto').focus();
     });
 });
 

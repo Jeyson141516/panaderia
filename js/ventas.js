@@ -1,5 +1,5 @@
 import { db } from './firebase-config.js';
-import { collection, addDoc, getDocs, serverTimestamp, query, where, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, addDoc, getDocs, query, where, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
 import { normalizarTexto, limpiarTexto, validarEntero, validarMonto, validarTelefono, ejecutarConBotonBloqueado, leerCache, guardarCache, esCoincidenciaFuzzy } from './utils.js';
 import { cargarDeudores, obtenerDeudores, actualizarBadgeVentas } from './deudores.js';
@@ -373,14 +373,17 @@ guardarPagoModal.addEventListener('click', () => {
                 montoAbono: monto,
                 fecha: new Date()
             });
-
-            cerrarModalAbonoHandler();
-            toast("¡Pago registrado! Deuda actualizada.");
-            await cargarVentasDelDia();
         } catch (error) {
-            console.error("Error al registrar el abono:", error);
-            toast("Hubo un error al guardar el pago.", "error");
+            if (error.message !== 'timeout') {
+                console.error("Error al registrar el abono:", error);
+                toast("Hubo un error al guardar el pago.", "error");
+                return;
+            }
         }
+
+        cerrarModalAbonoHandler();
+        toast("¡Pago registrado! Deuda actualizada.");
+        cargarVentasDelDia().catch(() => {});
     });
 });
 
@@ -747,38 +750,52 @@ guardarClienteModal.addEventListener('click', () => {
 
         const nombreNorm = normalizarTexto(nombre);
 
+        let existente = null;
         try {
-            const existente = await getDocs(query(collection(db, "clientes"), where("nombreNorm", "==", nombreNorm), limit(1)));
-
-            if (!existente.empty) {
-                toast("Ya existe un cliente con ese nombre.", "warning");
+            existente = await getDocs(query(collection(db, "clientes"), where("nombreNorm", "==", nombreNorm), limit(1)));
+        } catch (error) {
+            if (error.message !== 'timeout') {
+                console.error("Error al guardar cliente:", error);
+                toast("Hubo un error al guardar el cliente.", "error");
                 return;
             }
+        }
 
-            const ref = await addDoc(collection(db, "clientes"), {
+        if (existente && !existente.empty) {
+            toast("Ya existe un cliente con ese nombre.", "warning");
+            return;
+        }
+
+        let ref;
+        try {
+            ref = await addDoc(collection(db, "clientes"), {
                 nombre: nombre,
                 nombreNorm,
                 telefono: telefono,
-                fechaRegistro: serverTimestamp()
+                fechaRegistro: new Date()
             });
-
-            clientesCache.push({ id: ref.id, nombre, nombreNorm });
-            clientesCache.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-            guardarCache(CACHE_CLIENTES, clientesCache);
-
-            toast("¡Cliente guardado con éxito!");
-            clienteBusqueda.value = nombre;
-            buscarClientes(nombre);
-            cerrarModalHandler();
         } catch (error) {
-            console.error("Error al guardar cliente:", error);
-            toast("Hubo un error al guardar el cliente.", "error");
+            if (error.message !== 'timeout') {
+                console.error("Error al guardar cliente:", error);
+                toast("Hubo un error al guardar el cliente.", "error");
+                return;
+            }
+            ref = { id: crypto.randomUUID() };
         }
+
+        clientesCache.push({ id: ref.id, nombre, nombreNorm });
+        clientesCache.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+        guardarCache(CACHE_CLIENTES, clientesCache);
+
+        toast("¡Cliente guardado con éxito!");
+        clienteBusqueda.value = nombre;
+        buscarClientes(nombre);
+        cerrarModalHandler();
     });
 });
 async function guardarVenta(cliente, cantidad, estadoPago, fechaVenta) {
+    const total = cantidad * PRECIO_FUNDA;
     try {
-        const total = cantidad * PRECIO_FUNDA;
         await addDoc(collection(db, "ventas"), {
             cliente: cliente || "Cliente General",
             cantidadFundas: cantidad,
@@ -786,24 +803,27 @@ async function guardarVenta(cliente, cantidad, estadoPago, fechaVenta) {
             estadoPago,
             fecha: fechaVenta
         });
-
-        toast(estadoPago === 'debe'
-            ? "¡Venta registrada como FIADA (Pendiente)!"
-            : "¡Venta registrada con éxito!");
-
-        const fechaSeleccionada = fechaVentaSelect.value;
-        formVenta.reset();
-        fechaVentaSelect.value = fechaSeleccionada;
-        estadoPagoSelect.value = "pagado";
-        cerrarSugerencias();
-        totalPagarSpan.textContent = PRECIO_FUNDA.toFixed(2);
-        clienteBusqueda.value = "";
-        ocultarInfoSaldo();
-        await cargarVentasDelDia();
     } catch (error) {
-        console.error("Error al registrar transacción: ", error);
-        toast("Hubo un error al guardar la transacción.", "error");
+        if (error.message !== 'timeout') {
+            console.error("Error al registrar transacción: ", error);
+            toast("Hubo un error al guardar la transacción.", "error");
+            return;
+        }
     }
+
+    toast(estadoPago === 'debe'
+        ? "¡Venta registrada como FIADA (Pendiente)!"
+        : "¡Venta registrada con éxito!");
+
+    const fechaSeleccionada = fechaVentaSelect.value;
+    formVenta.reset();
+    fechaVentaSelect.value = fechaSeleccionada;
+    estadoPagoSelect.value = "pagado";
+    cerrarSugerencias();
+    totalPagarSpan.textContent = PRECIO_FUNDA.toFixed(2);
+    clienteBusqueda.value = "";
+    ocultarInfoSaldo();
+    cargarVentasDelDia().catch(() => {});
 }
 
 formVenta.addEventListener('submit', (e) => {
@@ -823,19 +843,24 @@ formVenta.addEventListener('submit', (e) => {
 
         const clienteFinal = cliente || "Cliente General";
 
+        let ventasHoy = 0;
+        let totalHoy = 0;
         try {
-            const { ventas, total } = await obtenerVentasDeHoyCliente(clienteFinal);
-
-            if (ventas > 0) {
-                abrirModalVentaDuplicada(clienteFinal, total, () => {
-                    guardarVenta(clienteFinal, cantidad, estadoPago, fechaVenta);
-                });
-            } else {
-                await guardarVenta(clienteFinal, cantidad, estadoPago, fechaVenta);
-            }
+            const resultado = await obtenerVentasDeHoyCliente(clienteFinal);
+            ventasHoy = resultado.ventas;
+            totalHoy = resultado.total;
         } catch (error) {
-            console.error("Error al verificar ventas duplicadas del día:", error);
-            toast("Hubo un error al verificar la venta.", "error");
+            // Sin caché local y offline: se omite la verificación de duplicados
+            // para no bloquear el registro. El usuario puede guardar sin restricción.
+            console.warn("No se pudo verificar duplicados (offline):", error);
+        }
+
+        if (ventasHoy > 0) {
+            abrirModalVentaDuplicada(clienteFinal, totalHoy, () => {
+                guardarVenta(clienteFinal, cantidad, estadoPago, fechaVenta);
+            });
+        } else {
+            await guardarVenta(clienteFinal, cantidad, estadoPago, fechaVenta);
         }
     });
 });

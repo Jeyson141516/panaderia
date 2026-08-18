@@ -137,20 +137,45 @@ export function validarMonto(valor, min = 0.01, max = 1000000) {
 }
 
 /**
- * Valida un teléfono: solo dígitos (y opcional + - espacios). Máx 15 dígitos.
- * @param {string} valor
- * @returns {string}
+ * Indica si el navegador está sin conexión a Internet.
+ * @returns {boolean}
  */
+export function estaOffline() {
+    return typeof navigator !== 'undefined' && !navigator.onLine;
+}
+
+/**
+ * Envuelve una promesa con un timeout. Si no se resuelve a tiempo,
+ * rechaza con un error "timeout". Útil para evitar bloqueos infinitos
+ * cuando Firestore no responde (ej. sin persistencia offline configurada).
+ * @param {Promise<any>} promesa
+ * @param {number} ms Milisegundos máximos de espera.
+ * @returns {Promise<any>}
+ */
+function conTimeout(promesa, ms) {
+    return Promise.race([
+        promesa,
+        new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), ms)
+        )
+    ]);
+}
+
 /**
  * Ejecuta un callback asíncrono bloqueando el botón durante la petición
  * para evitar dobles envíos. El botón se restaura siempre (éxito o error)
  * gracias a un bloque try/finally.
+ *
+ * Incluye un timeout (3 s por defecto) para que el botón nunca se quede
+ * colgado en "Procesando..." si la red o Firestore no responden.
+ *
  * @param {HTMLButtonElement} boton Botón a bloquear temporalmente.
  * @param {() => Promise<any>} callbackAsincrono Operación a ejecutar (ej. guardar en Firestore).
  * @param {string} textoCargando Texto/icono mostrado mientras se procesa.
+ * @param {number} timeoutMs Milisegundos antes de forzar la liberación del botón.
  * @returns {Promise<void>}
  */
-export async function ejecutarConBotonBloqueado(boton, callbackAsincrono, textoCargando = "Procesando...") {
+export async function ejecutarConBotonBloqueado(boton, callbackAsincrono, textoCargando = "Procesando...", timeoutMs = 3000) {
     if (!boton) {
         await callbackAsincrono();
         return;
@@ -169,7 +194,12 @@ export async function ejecutarConBotonBloqueado(boton, callbackAsincrono, textoC
     boton.innerHTML = `⏳ ${textoCargando}`;
 
     try {
-        await callbackAsincrono();
+        await conTimeout(callbackAsincrono(), timeoutMs);
+    } catch (error) {
+        if (error.message === 'timeout') {
+            console.warn("Firestore no respondió en el tiempo límite — tratando como guardado offline.");
+        }
+        throw error;
     } finally {
         boton.disabled = estadoOriginal.disabled;
         boton.style.cursor = estadoOriginal.cursor;
