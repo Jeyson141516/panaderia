@@ -34,7 +34,10 @@ let indiceActivo = -1;
 
 let gastosCache = [];
 let filtroGastoTexto = "";
-let filtroGastoDia = "";
+let filtroGastoDia = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+})();
 let filtroGastoDesde = "";
 let filtroGastoHasta = "";
 
@@ -464,6 +467,10 @@ fechaHastaGasto.addEventListener('change', (e) => {
     limpiarFiltroDia();
     renderGastos();
 });
+
+fechaFiltroGasto.value = filtroGastoDia;
+const btnHoy = botonesRapidosGasto.find((b) => parseInt(b.dataset.dias, 10) === 0);
+if (btnHoy) btnHoy.classList.add('activo');
 
 cargarInventario();
 cargarGastos();
