@@ -184,15 +184,15 @@ function aplicarFiltroBuscadorVentas() {
 
 /**
  * Contador en tiempo real del total cobrado.
- * Suma SOLO las ventas de contado (estado 'pagado'); excluye por completo
- * fiados ('debe') y abonos ('abono'). Respeta el buscador activo: si el
- * usuario filtra, el total refleja las ventas pagadas visibles.
+ * Suma ventas de contado (estado 'pagado') Y abonos (estado 'abono').
+ * Excluye fiados ('debe'). Respeta el buscador activo: si el usuario filtra,
+ * el total refleja solo las filas visibles.
  */
 function actualizarContadorDia() {
     let total = 0;
 
     ventasDiaCache.forEach((v) => {
-        if (v.estado !== 'pagado') return;
+        if (v.estado !== 'pagado' && v.estado !== 'abono') return;
         if (!esCoincidenciaFuzzy(v.cliente, buscadorVentasDia.value)) return;
         total += v.total;
     });
