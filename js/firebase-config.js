@@ -88,14 +88,17 @@ if (typeof window !== 'undefined') {
 
     window.addEventListener('offline', () => {
         banner.style.display = 'block';
+        document.body.classList.add('offline');
     });
 
     window.addEventListener('online', () => {
         banner.style.display = 'none';
+        document.body.classList.remove('offline');
     });
 
     // Estado inicial
     if (!navigator.onLine) {
         banner.style.display = 'block';
+        document.body.classList.add('offline');
     }
 }

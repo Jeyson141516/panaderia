@@ -1712,6 +1712,10 @@ input[type="submit"]:disabled:hover {
     max-width: 340px;
 }
 
+body.offline .toast-container {
+    bottom: 68px;
+}
+
 .toast {
     padding: 13px 18px;
     border-radius: var(--radius-md);
@@ -2106,6 +2110,10 @@ nav, main {
         right: 12px;
         bottom: 12px;
         max-width: none;
+    }
+
+    body.offline .toast-container {
+        bottom: 57px;
     }
 
     .toast {
