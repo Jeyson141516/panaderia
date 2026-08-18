@@ -1,5 +1,5 @@
-import { db } from './firebase-config.js';
-import { collection, addDoc, getDocs, query, where, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { db, getDocsSafe } from './firebase-config.js';
+import { collection, addDoc, query, where, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
 import { normalizarTexto, limpiarTexto, validarEntero, validarMonto, validarTelefono, ejecutarConBotonBloqueado, conTimeout, leerCache, guardarCache, esCoincidenciaFuzzy } from './utils.js';
 import { cargarDeudores, obtenerDeudores, actualizarBadgeVentas } from './deudores.js';
@@ -230,7 +230,7 @@ async function cargarVentasDelDia() {
         ventasDiaTitulo.textContent = `Ventas del Día (${formatearFechaLocal(inicio)})`;
 
         const [querySnapshot] = await Promise.all([
-            getDocs(
+            getDocsSafe(
                 query(collection(db, "ventas"),
                     where("fecha", ">=", inicio),
                     where("fecha", "<=", fin),
@@ -427,11 +427,11 @@ async function obtenerVentasDeHoyCliente(cliente) {
     const { anio, mes, dia, inicio, fin } = rangoHoyLocal();
     const clienteNorm = normalizarTexto(cliente);
 
-    const snapshot = await conTimeout(getDocs(query(
+    const snapshot = await getDocsSafe(query(
         collection(db, "ventas"),
         where("fecha", ">=", inicio),
         where("fecha", "<=", fin)
-    )), 3000);
+    ));
 
     let ventas = 0;
     let total = 0;
@@ -495,7 +495,7 @@ function cargarClientes() {
         const cacheado = leerCache(CACHE_CLIENTES, TTL_CLIENTES_MS);
         if (cacheado) clientesCache = cacheado;
 
-        clientesPromise = getDocs(collection(db, "clientes"))
+        clientesPromise = getDocsSafe(collection(db, "clientes"))
             .then((querySnapshot) => {
                 clientesCache = querySnapshot.docs
                     .map((docSnap) => {
@@ -752,7 +752,7 @@ guardarClienteModal.addEventListener('click', () => {
 
         let existente = null;
         try {
-            existente = await conTimeout(getDocs(query(collection(db, "clientes"), where("nombreNorm", "==", nombreNorm), limit(1))), 3000);
+            existente = await getDocsSafe(query(collection(db, "clientes"), where("nombreNorm", "==", nombreNorm), limit(1)));
         } catch (error) {
             if (error.message !== 'timeout') {
                 console.error("Error al guardar cliente:", error);

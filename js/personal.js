@@ -1,5 +1,5 @@
-import { db } from './firebase-config.js';
-import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { db, getDocsSafe } from './firebase-config.js';
+import { collection, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
 import { limpiarTexto, validarMonto, ejecutarConBotonBloqueado, conTimeout } from './utils.js';
 import { renderizarReportePersonalHtml } from './personal-impresion-render.js';
@@ -88,8 +88,8 @@ function formatearFecha(fecha) {
 async function cargarMovimientos() {
     try {
         const [adelantosSnap, pagosSnap] = await Promise.all([
-            getDocs(query(collection(db, COL_ADELANTOS), orderBy("fecha", "desc"))),
-            getDocs(query(collection(db, COL_PAGOS), orderBy("fecha", "desc")))
+            getDocsSafe(query(collection(db, COL_ADELANTOS), orderBy("fecha", "desc"))),
+            getDocsSafe(query(collection(db, COL_PAGOS), orderBy("fecha", "desc")))
         ]);
 
         const movimientos = [];

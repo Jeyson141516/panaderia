@@ -3,6 +3,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import {
     initializeFirestore,
     getFirestore,
+    getDocs,
+    getDocsFromCache,
     persistentLocalCache,
     persistentMultipleTabManager
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -54,6 +56,40 @@ try {
 
 export { db };
 export const auth = getAuth(app);
+
+// --- Lectura offline-safe ---
+// Snapshot vacío reutilizable cuando no hay datos en caché local.
+const EMPTY_SNAPSHOT = Object.freeze({
+    docs: [],
+    size: 0,
+    empty: true,
+    forEach: () => {},
+    docChanges: () => []
+});
+
+/**
+ * Envuelve getDocs para que, cuando el navegador está offline, lea
+ * directamente del caché IndexedDB (getDocsFromCache) en vez de intentar
+ * conectarse a la red y colgar.
+ *
+ *  - Online  → getDocs (red + caché, como siempre).
+ *  - Offline → getDocsFromCache (IndexedDB, instantáneo).
+ *                Si los datos no están en caché, devuelve un snapshot vacío
+ *                en vez de lanzar error, para que la UI no se rompa.
+ *
+ * @param {import("firebase/firestore").Query} q Query de Firestore.
+ * @returns {Promise<import("firebase/firestore").QuerySnapshot>}
+ */
+export async function getDocsSafe(q) {
+    if (!navigator.onLine) {
+        try {
+            return await getDocsFromCache(q);
+        } catch (_) {
+            return EMPTY_SNAPSHOT;
+        }
+    }
+    return getDocs(q);
+}
 
 // --- Indicador visual de estado de red ---
 // Muestra/oculta un banner discreto cuando el usuario está sin conexión.

@@ -1,5 +1,5 @@
-import { db } from './firebase-config.js';
-import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { db, getDocsSafe } from './firebase-config.js';
+import { collection, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { auth } from './firebase-config.js';
 import { normalizarTexto } from './utils.js';
@@ -19,7 +19,7 @@ export async function cargarDeudores() {
     if (promesaEnCurso) return promesaEnCurso;
 
     promesaEnCurso = (async () => {
-        const snapshot = await getDocs(
+        const snapshot = await getDocsSafe(
             query(collection(db, "ventas"),
                 where("estadoPago", "in", ["debe", "abono"]))
         );

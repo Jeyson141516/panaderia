@@ -1,5 +1,5 @@
-import { db } from './firebase-config.js';
-import { collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { db, getDocsSafe } from './firebase-config.js';
+import { collection, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
 import { renderizarReporteHtml } from './reporte-impresion-render.js';
 import { imprimirEnVistaActual } from './impresion.js';
@@ -118,10 +118,10 @@ async function cargarReporte() {
 
     try {
         const [querySnapshot, gastosSnap, adelantosSnap, pagosSnap] = await Promise.all([
-            getDocs(construirQuery()),
-            getDocs(query(collection(db, "gastos_inventario"), ...rangoFechas(), orderBy("fecha", "desc"))),
-            getDocs(query(collection(db, "adelantos"), orderBy("fecha", "asc"))),
-            getDocs(query(collection(db, "pagos_personal"), orderBy("fecha", "asc")))
+            getDocsSafe(construirQuery()),
+            getDocsSafe(query(collection(db, "gastos_inventario"), ...rangoFechas(), orderBy("fecha", "desc"))),
+            getDocsSafe(query(collection(db, "adelantos"), orderBy("fecha", "asc"))),
+            getDocsSafe(query(collection(db, "pagos_personal"), orderBy("fecha", "asc")))
         ]);
 
         let totalContado = 0;

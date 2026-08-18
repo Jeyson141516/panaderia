@@ -1,5 +1,5 @@
-import { db } from './firebase-config.js';
-import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { db, getDocsSafe } from './firebase-config.js';
+import { collection, addDoc, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
 import { normalizarTexto, limpiarTexto, validarMonto, ejecutarConBotonBloqueado, conTimeout, leerCache, guardarCache, esCoincidenciaFuzzy } from './utils.js';
 
@@ -111,7 +111,7 @@ function diaLocal(fecha) {
 
 async function cargarGastos() {
     try {
-        const snapshot = await getDocs(query(collection(db, "gastos_inventario"), orderBy("fecha", "desc")));
+        const snapshot = await getDocsSafe(query(collection(db, "gastos_inventario"), orderBy("fecha", "desc")));
 
         gastosCache = [];
         snapshot.forEach((docSnap) => gastosCache.push({ id: docSnap.id, ...docSnap.data() }));
@@ -171,7 +171,7 @@ function cargarInventario() {
         renderInventario();
     }
 
-    return getDocs(query(collection(db, "inventario"), orderBy("nombreNorm", "asc")))
+    return getDocsSafe(query(collection(db, "inventario"), orderBy("nombreNorm", "asc")))
         .then((snapshot) => {
             inventarioCache = [];
             snapshot.forEach((docSnap) => {
