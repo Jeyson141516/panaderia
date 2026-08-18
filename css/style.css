@@ -2355,3 +2355,82 @@ nav, main {
 :root[data-theme="oscuro"] .login-error {
     color: #fca5a5;
 }
+
+/* ============ Responsive: Inventario y Gastos ============ */
+
+/* Tablets y móviles (≤ 768px) */
+@media (max-width: 768px) {
+    .gastos-filtros {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .gastos-filtros .inventory-search {
+        max-width: 100%;
+        margin-bottom: 0;
+    }
+
+    .gastos-filtros .filtros-rapidos-dia {
+        justify-content: flex-start;
+        margin-bottom: 0;
+    }
+
+    .gastos-filtros .filtro-rango {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        margin-bottom: 0;
+    }
+
+    .filtro-rango-item {
+        width: 100%;
+    }
+
+    .filtro-rango-item .fecha-dia-input {
+        max-width: 100%;
+        flex: 1;
+    }
+
+    .gastos-filtros .total-gastos {
+        margin-left: 0;
+        justify-content: center;
+        width: 100%;
+    }
+}
+
+/* Teléfonos (≤ 576px) */
+@media (max-width: 576px) {
+    .gastos-filtros {
+        gap: 12px;
+    }
+
+    .gastos-filtros .filtros-rapidos-dia {
+        width: 100%;
+    }
+
+    .btn-rapido-dia {
+        flex: 1;
+        text-align: center;
+        padding: 10px 8px;
+    }
+
+    .fecha-dia-input {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .total-gastos {
+        flex-direction: column;
+        text-align: center;
+        gap: 6px;
+        padding: 12px 14px;
+    }
+
+    .total-gastos-monto {
+        font-size: 1.35rem;
+    }
+
+    .card-wide {
+        padding: 18px 14px;
+    }
+}
