@@ -60,8 +60,8 @@
             <div class="filtro-group">
                 <label for="periodoFiltro">Período</label>
                 <select id="periodoFiltro">
-                    <option value="hoy">Hoy</option>
-                    <option value="mes" selected>Este Mes</option>
+                    <option value="hoy" selected>Hoy</option>
+                    <option value="mes">Este Mes</option>
                     <option value="semana">Esta Semana</option>
                     <option value="personalizado">Personalizado</option>
                 </select>
@@ -167,10 +167,12 @@
             <div class="metric-card success">
                 <h4>Ventas de Contado</h4>
                 <span id="lblContado" style="color: var(--success);">$0.00</span>
+                <small>Pagos en efectivo directos (sin incluir abonos)</small>
             </div>
             <div class="metric-card warning">
                 <h4>Ventas a Crédito (Fiado)</h4>
                 <span id="lblCredito" style="color: var(--warning);">$0.00</span>
+                <small>Suma de todas las ventas fiadas en el período</small>
             </div>
             <div class="metric-card info">
                 <h4>Abonos del Período</h4>
@@ -180,10 +182,12 @@
             <div class="metric-card danger">
                 <h4>Total Pendiente de Cobro</h4>
                 <span id="lblPendiente" style="color: var(--danger);">$0.00</span>
+                <small>Crédito − Abonos recibidos</small>
             </div>
             <div class="metric-card info">
                 <h4>Total Facturado</h4>
                 <span id="lblTotal" style="color: var(--info);">$0.00</span>
+                <small>Ventas al contado + Abonos del período</small>
             </div>
         </div>
 

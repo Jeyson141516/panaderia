@@ -42,9 +42,9 @@ function fechaISO(d) {
 
 window.addEventListener('DOMContentLoaded', () => {
     const hoy = new Date();
-    const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-    fechaInicioInput.value = fechaISO(primerDia);
+    fechaInicioInput.value = fechaISO(hoy);
     fechaFinInput.value = fechaISO(hoy);
+    bloquearFechas(true);
 
     cargarReporte();
 });
@@ -137,10 +137,10 @@ async function cargarReporte() {
             const estado = venta.estadoPago || "pagado";
             const fundas = Number(venta.cantidadFundas) || 0;
 
-            // Efectivo REAL recaudado de contado en el período. Se acumula sin
-            // depender del filtro de estado porque alimenta exclusivamente la
-            // fórmula de la utilidad neta (flujo de caja real del período).
-            if (estado === 'pagado') {
+            // Efectivo REAL recaudado en el período: contado + abonos. Se
+            // acumula sin depender del filtro de estado porque alimenta la
+            // fórmula de la utilidad neta y la tarjeta de efectivo total.
+            if (estado === 'pagado' || estado === 'abono') {
                 ingresosContado += monto;
             }
 
@@ -184,7 +184,7 @@ async function cargarReporte() {
         // fiadas (crédito) y los abonos NO la alteran.
         const utilidadNeta = ingresosContado - totalGastos - totalAPagar;
 
-        const totalFacturado = totalContado + totalCredito;
+        const totalFacturado = totalContado + totalAbonos;
         const totalPendiente = Math.max(0, totalCredito - totalAbonos);
 
         const insights = calcularInsightsDeVenta({ ventas: querySnapshot.docs.map((d) => d.data()), periodo: periodoFiltro.value });
