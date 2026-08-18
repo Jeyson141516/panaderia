@@ -1,7 +1,7 @@
 import { db } from './firebase-config.js';
 import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
-import { limpiarTexto, validarMonto, ejecutarConBotonBloqueado } from './utils.js';
+import { limpiarTexto, validarMonto, ejecutarConBotonBloqueado, conTimeout } from './utils.js';
 import { renderizarReportePersonalHtml } from './personal-impresion-render.js';
 import { imprimirEnVistaActual } from './impresion.js';
 
@@ -292,13 +292,13 @@ formMovimiento.addEventListener('submit', (e) => {
         try {
             const coleccion = tipo === "adelanto" ? COL_ADELANTOS : COL_PAGOS;
 
-            await addDoc(collection(db, coleccion), {
+            await conTimeout(addDoc(collection(db, coleccion), {
                 trabajador,
                 monto,
                 concepto: concepto || (tipo === "adelanto" ? "Adelanto" : "Pago de jornal"),
                 dia,
                 fecha: new Date()
-            });
+            }), 3000);
         } catch (error) {
             if (error.message !== 'timeout') {
                 console.error("Error al guardar movimiento: ", error);

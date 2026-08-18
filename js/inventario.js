@@ -1,7 +1,7 @@
 import { db } from './firebase-config.js';
 import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
-import { normalizarTexto, limpiarTexto, validarMonto, ejecutarConBotonBloqueado, leerCache, guardarCache, esCoincidenciaFuzzy } from './utils.js';
+import { normalizarTexto, limpiarTexto, validarMonto, ejecutarConBotonBloqueado, conTimeout, leerCache, guardarCache, esCoincidenciaFuzzy } from './utils.js';
 
 const formGasto = document.getElementById('formGasto');
 const tablaGastos = document.getElementById('tablaGastos');
@@ -78,12 +78,12 @@ formGasto.addEventListener('submit', (e) => {
         }
 
         try {
-            await addDoc(collection(db, "gastos_inventario"), {
+            await conTimeout(addDoc(collection(db, "gastos_inventario"), {
                 producto: producto.nombre,
                 productoNorm: producto.nombreNorm,
                 monto,
                 fecha: new Date()
-            });
+            }), 3000);
         } catch (error) {
             if (error.message !== 'timeout') {
                 console.error("Error al guardar gasto: ", error);
@@ -285,11 +285,11 @@ guardarProductoModal.addEventListener('click', () => {
 
         let ref;
         try {
-            ref = await addDoc(collection(db, "inventario"), {
+            ref = await conTimeout(addDoc(collection(db, "inventario"), {
                 nombre,
                 nombreNorm,
                 fechaRegistro: new Date()
-            });
+            }), 3000);
         } catch (error) {
             if (error.message !== 'timeout') {
                 console.error("Error al guardar producto: ", error);

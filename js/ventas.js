@@ -1,7 +1,7 @@
 import { db } from './firebase-config.js';
 import { collection, addDoc, getDocs, query, where, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
-import { normalizarTexto, limpiarTexto, validarEntero, validarMonto, validarTelefono, ejecutarConBotonBloqueado, leerCache, guardarCache, esCoincidenciaFuzzy } from './utils.js';
+import { normalizarTexto, limpiarTexto, validarEntero, validarMonto, validarTelefono, ejecutarConBotonBloqueado, conTimeout, leerCache, guardarCache, esCoincidenciaFuzzy } from './utils.js';
 import { cargarDeudores, obtenerDeudores, actualizarBadgeVentas } from './deudores.js';
 
 const PRECIO_FUNDA = 1.00;
@@ -365,14 +365,14 @@ guardarPagoModal.addEventListener('click', () => {
         }
 
         try {
-            await addDoc(collection(db, "ventas"), {
+            await conTimeout(addDoc(collection(db, "ventas"), {
                 cliente: abonoClienteSeleccionado,
                 cantidadFundas: 0,
                 totalVenta: monto,
                 estadoPago: 'abono',
                 montoAbono: monto,
                 fecha: new Date()
-            });
+            }), 3000);
         } catch (error) {
             if (error.message !== 'timeout') {
                 console.error("Error al registrar el abono:", error);
@@ -427,11 +427,11 @@ async function obtenerVentasDeHoyCliente(cliente) {
     const { anio, mes, dia, inicio, fin } = rangoHoyLocal();
     const clienteNorm = normalizarTexto(cliente);
 
-    const snapshot = await getDocs(query(
+    const snapshot = await conTimeout(getDocs(query(
         collection(db, "ventas"),
         where("fecha", ">=", inicio),
         where("fecha", "<=", fin)
-    ));
+    )), 3000);
 
     let ventas = 0;
     let total = 0;
@@ -752,7 +752,7 @@ guardarClienteModal.addEventListener('click', () => {
 
         let existente = null;
         try {
-            existente = await getDocs(query(collection(db, "clientes"), where("nombreNorm", "==", nombreNorm), limit(1)));
+            existente = await conTimeout(getDocs(query(collection(db, "clientes"), where("nombreNorm", "==", nombreNorm), limit(1))), 3000);
         } catch (error) {
             if (error.message !== 'timeout') {
                 console.error("Error al guardar cliente:", error);
@@ -768,12 +768,12 @@ guardarClienteModal.addEventListener('click', () => {
 
         let ref;
         try {
-            ref = await addDoc(collection(db, "clientes"), {
+            ref = await conTimeout(addDoc(collection(db, "clientes"), {
                 nombre: nombre,
                 nombreNorm,
                 telefono: telefono,
                 fechaRegistro: new Date()
-            });
+            }), 3000);
         } catch (error) {
             if (error.message !== 'timeout') {
                 console.error("Error al guardar cliente:", error);
@@ -796,13 +796,13 @@ guardarClienteModal.addEventListener('click', () => {
 async function guardarVenta(cliente, cantidad, estadoPago, fechaVenta) {
     const total = cantidad * PRECIO_FUNDA;
     try {
-        await addDoc(collection(db, "ventas"), {
+        await conTimeout(addDoc(collection(db, "ventas"), {
             cliente: cliente || "Cliente General",
             cantidadFundas: cantidad,
             totalVenta: total,
             estadoPago,
             fecha: fechaVenta
-        });
+        }), 3000);
     } catch (error) {
         if (error.message !== 'timeout') {
             console.error("Error al registrar transacción: ", error);
