@@ -631,6 +631,7 @@ function buscarClientes(texto) {
 
     coincidencias.forEach((cliente, index) => {
         const li = document.createElement('li');
+        li.dataset.nombre = cliente.nombre;
         if (cliente.conDeuda) {
             li.className = 'con-deuda';
             li.innerHTML = `${escapeHtml(cliente.nombre)}<span class="deuda-tag">Fiado ${formatearMoneda(cliente.saldo)}</span>`;
@@ -672,7 +673,7 @@ clienteBusqueda.addEventListener('keydown', (e) => {
         items[indiceActivo].scrollIntoView({ block: 'nearest' });
     } else if (e.key === 'Enter') {
         e.preventDefault();
-        seleccionarCliente(items[Math.max(indiceActivo, 0)].textContent);
+        seleccionarCliente(items[Math.max(indiceActivo, 0)].dataset.nombre);
     } else if (e.key === 'Escape') {
         e.preventDefault();
         cerrarSugerencias();
