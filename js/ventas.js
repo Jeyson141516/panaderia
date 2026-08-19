@@ -66,6 +66,7 @@ function aplicarRapidoDia(btn) {
     fechaFiltroDia.value = fechaOffsetLocal(dias);
     botonesRapidosDia.forEach((b) => b.classList.toggle('activo', b === btn));
     localStorage.setItem(CLAVE_DIA_CONSULTA, fechaFiltroDia.value);
+    localStorage.setItem(CLAVE_MODO_DIA_CONSULTA, String(dias));
     cargarVentasDelDia();
 }
 
@@ -278,11 +279,15 @@ function actualizarTotalVenta() {
 cantidadInput.addEventListener('input', actualizarTotalVenta);
 
 const CLAVE_DIA_CONSULTA = 'panaderia-dia-consulta';
+const CLAVE_MODO_DIA_CONSULTA = 'panaderia-dia-consulta-modo';
 
 function restaurarDiaConsultado() {
     const guardado = localStorage.getItem(CLAVE_DIA_CONSULTA);
+    const modoGuardado = localStorage.getItem(CLAVE_MODO_DIA_CONSULTA);
     const valido = guardado && /^\d{4}-\d{2}-\d{2}$/.test(guardado);
-    fechaFiltroDia.value = valido ? guardado : fechaHoyLocal();
+    fechaFiltroDia.value = modoGuardado === '0' || !modoGuardado
+        ? fechaHoyLocal()
+        : (valido ? guardado : fechaHoyLocal());
     marcarRapidoDiaActivo(fechaFiltroDia.value);
 }
 
@@ -294,6 +299,7 @@ fechaFiltroDia.addEventListener('change', () => {
     }
     desmarcarRapidosDia();
     localStorage.setItem(CLAVE_DIA_CONSULTA, fechaFiltroDia.value);
+    localStorage.setItem(CLAVE_MODO_DIA_CONSULTA, 'manual');
     cargarVentasDelDia();
 });
 
