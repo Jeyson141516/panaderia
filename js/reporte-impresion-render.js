@@ -95,6 +95,10 @@ function gastosPorProductoHtml(r) {
 }
 
 export function renderizarReporteHtml(r) {
+    const periodo = escapeHtml(etiquetaPeriodo(r.periodo));
+    const fechaInicio = escapeHtml(r.fechaInicio || 'inicio');
+    const fechaFin = escapeHtml(r.fechaFin || 'hoy');
+    const estado = escapeHtml(etiquetaEstado(r.estado));
     const pagosHtml = (r.pagosTrabajadores || []).length > 0
         ? r.pagosTrabajadores.map((f) =>
             `<tr><td>${escapeHtml(f.trabajador)}</td><td class="num">${formatearMoneda(f.salarioTotal)}</td><td class="num">${formatearMoneda(f.adelantos)}</td><td class="num"><b>${formatearMoneda(f.totalPagar)}</b></td></tr>`).join('')
@@ -130,7 +134,7 @@ export function renderizarReporteHtml(r) {
         </header>
 
         <div class="meta">
-            <span>Período: <b>${etiquetaPeriodo(r.periodo)}</b> · Del <b>${r.fechaInicio || 'inicio'}</b> al <b>${r.fechaFin || 'hoy'}</b> · Estado: <b>${etiquetaEstado(r.estado)}</b></span>
+            <span>Período: <b>${periodo}</b> · Del <b>${fechaInicio}</b> al <b>${fechaFin}</b> · Estado: <b>${estado}</b></span>
             <span class="fecha">Generado: ${fechaGeneracion}</span>
         </div>
 

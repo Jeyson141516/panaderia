@@ -113,6 +113,11 @@ function formatearMoneda(valor) {
     return `$${Number(valor).toFixed(2)}`;
 }
 
+function fechaReporteSegura(valor) {
+    const fecha = String(valor || '').trim();
+    return /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : '';
+}
+
 async function cargarReporte() {
     btnConsultar.disabled = true;
 
@@ -190,8 +195,8 @@ async function cargarReporte() {
         const insights = calcularInsightsDeVenta({ ventas: querySnapshot.docs.map((d) => d.data()), periodo: periodoFiltro.value });
 
         ultimoReporte = {
-            fechaInicio: fechaInicioInput.value,
-            fechaFin: fechaFinInput.value,
+            fechaInicio: fechaReporteSegura(fechaInicioInput.value),
+            fechaFin: fechaReporteSegura(fechaFinInput.value),
             estado: estadoFiltro.value,
             periodo: periodoFiltro.value,
             totalContado,
