@@ -200,17 +200,28 @@ function renderInventario() {
         return;
     }
 
-    tablaInventario.innerHTML = filtrados.map((p) => `
-        <tr>
-            <td>${escapeHtml(p.nombre)}</td>
-            <td class="actions-cell">
-                <button class="btn-icon" data-id="${p.id}" title="Eliminar del inventario">🗑️</button>
-            </td>
-        </tr>`).join("");
+    const fragmento = document.createDocumentFragment();
 
-    tablaInventario.querySelectorAll('.btn-icon').forEach((btn) => {
-        btn.addEventListener('click', () => eliminarProducto(btn.dataset.id));
+    filtrados.forEach((producto) => {
+        const fila = document.createElement('tr');
+        const celdaNombre = document.createElement('td');
+        const celdaAcciones = document.createElement('td');
+        const botonEliminar = document.createElement('button');
+
+        celdaNombre.textContent = producto.nombre;
+        celdaAcciones.className = 'actions-cell';
+        botonEliminar.className = 'btn-icon';
+        botonEliminar.dataset.id = producto.id;
+        botonEliminar.title = 'Eliminar del inventario';
+        botonEliminar.textContent = '🗑️';
+        botonEliminar.addEventListener('click', () => eliminarProducto(botonEliminar.dataset.id));
+
+        celdaAcciones.appendChild(botonEliminar);
+        fila.append(celdaNombre, celdaAcciones);
+        fragmento.appendChild(fila);
     });
+
+    tablaInventario.replaceChildren(fragmento);
 }
 
 async function eliminarProducto(id) {
