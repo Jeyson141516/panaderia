@@ -18,6 +18,7 @@ const PRECACHE = [
     './inventario.html',
     './personal.html',
     './reportes.html',
+    './usuarios.html',
     './reporte-impresion.html',
     './personal-impresion.html',
     './login.html',

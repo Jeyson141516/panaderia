@@ -5,7 +5,7 @@
    - Permite crear, desactivar/activar empleados y enviar
      correo de recuperación de contraseña.
    - Todo funciona desde el cliente sin Cloud Functions.
-   - Se carga únicamente en personal.html.
+   - Se carga únicamente en usuarios.html.
    ============================================================ */
 import { auth } from './firebase-config.js';
 import {
@@ -28,7 +28,6 @@ import {
 
 /* ---------- Elementos del DOM ---------- */
 
-const adminSection = document.getElementById('adminSection');
 const tablaEmpleados = document.getElementById('tablaEmpleados');
 
 // Modal crear empleado
@@ -254,15 +253,11 @@ onAuthStateChanged(auth, async (user) => {
         const datos = await conTimeout(obtenerUsuarioPorUID(user.uid), 3000);
 
         if (datos && datos.rol === 'admin') {
-            adminSection.classList.remove('admin-hidden');
             cargarLista();
-        } else {
-            adminSection.classList.add('admin-hidden');
         }
     } catch (err) {
         if (err.message !== 'timeout') {
             console.error('Error verificando rol para admin panel:', err);
         }
-        adminSection.classList.add('admin-hidden');
     }
 });

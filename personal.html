@@ -43,6 +43,7 @@
             <li><a href="inventario.html"><span class="nav-icon">📦</span> Inventario y Gastos</a></li>
             <li><a href="personal.html" class="active"><span class="nav-icon">👥</span> Personal y Adelantos</a></li>
             <li><a href="reportes.html"><span class="nav-icon">📊</span> Reportes</a></li>
+            <li><a href="usuarios.html" class="admin-only-link"><span class="nav-icon">👤</span> Usuarios</a></li>
         </ul>
         <div class="nav-footer">
             <span class="nav-user">👤 <span id="navUsuario">…</span></span>
@@ -56,28 +57,7 @@
             <p>Pagos de jornal/semana y control de adelantos de Patucho, Lucho y Flaquito.</p>
         </header>
 
-        <!-- ===== Sección Admin: Gestión de Empleados (solo visible para admins) ===== -->
-        <div id="adminSection" class="card card-wide admin-hidden">
-            <div class="admin-header">
-                <h3>Gestión de Empleados</h3>
-                <button type="button" id="btnCrearEmpleado" class="btn-success">+ Nuevo Empleado</button>
-            </div>
-            <div class="table-wrap">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Correo</th>
-                            <th>Rol</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaEmpleados">
-                        <tr><td colspan="4" class="empty-cell">Cargando empleados...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        <!-- ===== Sección Admin: Gestión de Empleados (movida a usuarios.html) ===== -->
 
         <div class="metrics-grid" id="resumenPersonal">
             <div class="summary-card"><h4>Cargando resumen...</h4></div>
@@ -199,76 +179,7 @@
 
     <div id="areaImpresion" class="area-impresion" aria-hidden="true"></div>
 
-    <!-- ===== Modal: Crear nuevo empleado ===== -->
-    <div id="modalCrearEmpleado" class="modal">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3>Crear Nuevo Empleado</h3>
-                <button type="button" class="modal-close" id="cerrarModalCrear" aria-label="Cerrar">✕</button>
-            </div>
-            <form id="formCrearEmpleado">
-                <div class="form-group">
-                    <label for="crearEmail">Correo electrónico</label>
-                    <input type="email" id="crearEmail" placeholder="empleado@correo.com" required autocomplete="off">
-                </div>
-                <div class="form-group">
-                    <label for="crearClave">Contraseña temporal</label>
-                    <input type="password" id="crearClave" placeholder="Mínimo 6 caracteres" minlength="6" required autocomplete="off">
-                </div>
-                <div class="form-group">
-                    <label for="crearRol">Rol</label>
-                    <select id="crearRol" required>
-                        <option value="empleado">Empleado</option>
-                        <option value="admin">Administrador</option>
-                    </select>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" id="cancelarModalCrear" class="btn-danger">Cancelar</button>
-                    <button type="submit" class="btn-success">Crear Empleado</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- ===== Modal: Recuperar contraseña ===== -->
-    <div id="modalCambiarClave" class="modal">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3>Recuperar Contraseña</h3>
-                <button type="button" class="modal-close" id="cerrarModalClave" aria-label="Cerrar">✕</button>
-            </div>
-            <div class="abono-info-grid">
-                <div class="abono-info-box">
-                    <span class="abono-info-label">Empleado</span>
-                    <span class="abono-info-value" id="claveEmail">—</span>
-                </div>
-            </div>
-            <p class="recuperar-info">Se enviará un correo de recuperación de contraseña a esta dirección. El empleado podrá crear una nueva contraseña desde su bandeja de entrada.</p>
-            <div class="modal-actions">
-                <button type="button" id="cancelarModalClave" class="btn-danger">Cancelar</button>
-                <button type="button" id="enviarRecuperacionBtn" class="btn-success">Enviar Correo</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== Modal: Confirmar cambio de estado ===== -->
-    <div id="modalConfirmarEstado" class="modal">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3>Confirmar acción</h3>
-                <button type="button" class="modal-close" id="cerrarModalEstado" aria-label="Cerrar">✕</button>
-            </div>
-            <p>¿Estás seguro de que deseas <strong id="estadoAccion">desactivar</strong> a <strong id="estadoEmail">—</strong>?</p>
-            <input type="hidden" id="estadoUid">
-            <div class="modal-actions">
-                <button type="button" id="cancelarModalEstado" class="btn-danger">Cancelar</button>
-                <button type="button" id="confirmarEstadoBtn" class="btn-success">Confirmar</button>
-            </div>
-        </div>
-    </div>
-
     <script type="module" src="js/personal.js"></script>
-    <script type="module" src="js/admin-usuarios.js"></script>
     <script type="module" src="js/deudores.js"></script>
     <script>
         if ('serviceWorker' in navigator) {

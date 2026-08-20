@@ -138,6 +138,22 @@ function revelarContenido() {
     if (loader) loader.remove();
 }
 
+/**
+ * Aplica restricciones de navegación según el rol del usuario.
+ * - Empleados: solo ven "Ventas" en la barra lateral.
+ * - Admins: ven todo.
+ */
+function _aplicarRestriccionesPorRol(rol) {
+    if (rol !== 'admin') {
+        document.body.classList.add('empleado-role');
+    } else {
+        document.body.classList.remove('empleado-role');
+    }
+}
+
+/** Páginas que solo un administrador puede acceder. */
+const PAGINAS_ADMIN = ['usuarios.html'];
+
 /* ---------- Route Guard ---------- */
 onAuthStateChanged(auth, async (usuario) => {
     const pagina = obtenerNombrePagina();
@@ -169,6 +185,14 @@ onAuthStateChanged(auth, async (usuario) => {
 
         _usuarioRol = datos.rol || 'empleado';
         _usuarioDatos = datos;
+
+        // Bloquear acceso a páginas de admin si el usuario es empleado
+        if (PAGINAS_ADMIN.includes(pagina) && _usuarioRol !== 'admin') {
+            window.location.replace("index.html");
+            return;
+        }
+
+        _aplicarRestriccionesPorRol(_usuarioRol);
 
         revelarContenido();
         iniciarControlInactividad(expulsarPorInactividad);
