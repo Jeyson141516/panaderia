@@ -21,7 +21,9 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.admin == true ||
-        request.auth.token.email in ["jeysonstevenbeltranlainez@gmail.com"]
+        request.auth.token.email in ["jeysonstevenbeltranlainez@gmail.com"] ||
+        // Verificar rol "admin" en la colección "usuarios" (Opción 2)
+        get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.rol == "admin"
       );
     }
 
@@ -119,6 +121,26 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && esMovimientoPersonalValido();
       allow update, delete: if isAdmin();
+    }
+
+    // --- Usuarios (gestión de empleados y roles) ---
+    // Cada documento usa el UID de Firebase Auth como ID.
+    match /usuarios/{uid} {
+      // Lectura: cualquier usuario autenticado (para verificar estado/rol).
+      allow read: if isSignedIn();
+
+      // Escritura: el propio usuario al registrarse O un admin.
+      allow create: if isSignedIn()
+        && (request.auth.uid == uid || isAdmin())
+        && request.resource.data.email is string
+        && request.resource.data.rol in ["admin", "empleado"]
+        && request.resource.data.estado in ["activo", "inactivo"];
+
+      // Solo admin puede cambiar estado o datos de otros usuarios.
+      allow update: if isAdmin()
+        && request.resource.data.email is string
+        && request.resource.data.rol in ["admin", "empleado"]
+        && request.resource.data.estado in ["activo", "inactivo"];
     }
 
     // Por defecto, todo lo demás queda bloqueado

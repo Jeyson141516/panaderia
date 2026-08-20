@@ -6,6 +6,8 @@
      persistencia en localStorage del navegador).
    - El Route Guard usa onAuthStateChanged para redirigir o
      revelar el contenido una vez conocido el estado real.
+   - Verifica el campo "estado" en la colección "usuarios"
+     para bloquear cuentas desactivadas.
    ============================================================ */
 import { auth } from './firebase-config.js';
 import { iniciarControlInactividad, detenerControlInactividad } from './session.js';
@@ -17,6 +19,9 @@ import {
     setPersistence,
     browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+let _usuarioRol = null;
+let _usuarioDatos = null;
 
 // Sistema de temas (claro/oscuro): aplica la preferencia guardada y
 // activa los botones de alternancia de todas las páginas.
@@ -67,6 +72,8 @@ export async function iniciarSesion(email, clave) {
 }
 
 export async function cerrarSesion() {
+    _usuarioRol = null;
+    _usuarioDatos = null;
     await signOut(auth);
 }
 
@@ -76,6 +83,44 @@ export function obtenerUsuario() {
 
 export function estaAutenticado() {
     return auth.currentUser != null;
+}
+
+/**
+ * Verifica que el usuario autenticado tenga un documento activo
+ * en la colección "usuarios". Devuelve los datos del documento
+ * o null si no existe / está inactivo.
+ *
+ * Se usa tanto al iniciar sesión como en el route guard de
+ * cada página protegida.
+ */
+export async function verificarEstadoUsuario(usuario) {
+    try {
+        const { obtenerUsuarioPorUID } = await import('./usuarios.js');
+        const datos = await obtenerUsuarioPorUID(usuario.uid);
+        if (!datos) return null;
+        if (datos.estado === 'inactivo') return null;
+        return datos;
+    } catch (err) {
+        console.error('Error verificando estado del usuario:', err);
+        return null;
+    }
+}
+
+/**
+ * Devuelve el rol cacheado del usuario ("admin" o "empleado").
+ * Solo tiene datos después de que el route guard haya verificado
+ * al usuario en la página.
+ */
+export function obtenerRol() {
+    return _usuarioRol;
+}
+
+/**
+ * Devuelve los datos completos del documento "usuarios" del
+ * usuario actual (cacheados por el route guard).
+ */
+export function obtenerDatosUsuario() {
+    return _usuarioDatos;
 }
 
 /* ---------- Utilidades ---------- */
@@ -94,7 +139,7 @@ function revelarContenido() {
 }
 
 /* ---------- Route Guard ---------- */
-onAuthStateChanged(auth, (usuario) => {
+onAuthStateChanged(auth, async (usuario) => {
     const pagina = obtenerNombrePagina();
 
     if (pagina === "login.html") {
@@ -109,6 +154,22 @@ onAuthStateChanged(auth, (usuario) => {
 
     // Cualquier otra página es protegida
     if (usuario) {
+        // Verificar que la cuenta esté activa en Firestore
+        const datos = await verificarEstadoUsuario(usuario);
+
+        if (!datos) {
+            // Cuenta inactiva o sin documento: cerrar sesión
+            try { await cerrarSesion(); } catch (_) {}
+            limpiarAlmacenamientoSesion();
+            sessionStorage.setItem("cuentaDesactivada", "1");
+            detenerControlInactividad();
+            window.location.replace("login.html");
+            return;
+        }
+
+        _usuarioRol = datos.rol || 'empleado';
+        _usuarioDatos = datos;
+
         revelarContenido();
         iniciarControlInactividad(expulsarPorInactividad);
 
@@ -138,5 +199,8 @@ window.PanaderiaAuth = {
     iniciarSesion,
     cerrarSesion,
     obtenerUsuario,
-    estaAutenticado
+    estaAutenticado,
+    verificarEstadoUsuario,
+    obtenerRol,
+    obtenerDatosUsuario
 };

@@ -1,5 +1,5 @@
 import { toast } from './ui.js';
-import { iniciarSesion } from './auth.js';
+import { iniciarSesion, cerrarSesion, verificarEstadoUsuario } from './auth.js';
 import { limpiarTexto, validarEmail } from './utils.js';
 
 const formLogin = document.getElementById('formLogin');
@@ -14,6 +14,12 @@ function mostrarError(mensaje) {
 if (sessionStorage.getItem('sesionExpirada') === '1') {
     mostrarError('Tu sesión expiró por inactividad. Vuelve a iniciar sesión.');
     sessionStorage.removeItem('sesionExpirada');
+}
+
+// Aviso de cuenta desactivada (marca establecida por auth.js route guard)
+if (sessionStorage.getItem('cuentaDesactivada') === '1') {
+    mostrarError('Tu cuenta está desactivada. Contacta al administrador.');
+    sessionStorage.removeItem('cuentaDesactivada');
 }
 
 function traducirError(codigo) {
@@ -55,6 +61,18 @@ formLogin.addEventListener('submit', async (e) => {
 
     try {
         const usuario = await iniciarSesion(email, clave);
+
+        // Verificar que la cuenta esté activa en Firestore
+        const datos = await verificarEstadoUsuario(usuario);
+
+        if (!datos) {
+            // Cuenta desactivada o sin documento: cerrar sesión de inmediato
+            await cerrarSesion();
+            mostrarError('Tu cuenta está desactivada. Contacta al administrador.');
+            toast('Cuenta desactivada. No puedes iniciar sesión.', 'error');
+            return;
+        }
+
         loginError.hidden = true;
         toast(`¡Bienvenido, ${usuario.email}!`);
         setTimeout(() => window.location.replace('index.html'), 600);

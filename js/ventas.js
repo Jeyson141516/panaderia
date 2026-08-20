@@ -1,4 +1,5 @@
 import { db, getDocsSafe } from './firebase-config.js';
+import { obtenerRol } from './auth.js';
 import { collection, addDoc, query, where, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
 import { normalizarTexto, limpiarTexto, validarEntero, validarMonto, validarTelefono, ejecutarConBotonBloqueado, conTimeout, leerCache, guardarCache, esCoincidenciaFuzzy } from './utils.js';
@@ -874,3 +875,13 @@ formVenta.addEventListener('submit', (e) => {
 
 restaurarDiaConsultado();
 cargarVentasDelDia();
+
+/* ---------- Ocultar "Total del Día" para empleados ---------- */
+(function ocultarTotalDiaSiEmpleado() {
+    const wrapper = document.getElementById('totalDiaContadoWrapper');
+    if (!wrapper) return;
+    const rol = obtenerRol();
+    if (rol && rol !== 'admin') {
+        wrapper.style.display = 'none';
+    }
+})();

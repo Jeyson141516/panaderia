@@ -1253,6 +1253,106 @@ input[type="submit"]:disabled:hover {
     color: var(--brand-1);
 }
 
+.badge.admin-badge {
+    background: rgba(99, 102, 241, .16);
+    color: var(--brand-1);
+}
+
+.badge.empleado-badge {
+    background: rgba(34, 197, 94, .16);
+    color: #15803d;
+}
+
+/* ============ Panel Admin: Gestión de Empleados ============ */
+.admin-hidden {
+    display: none !important;
+}
+
+.admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.admin-header h3 {
+    margin: 0;
+}
+
+.btn-accion {
+    display: inline-block;
+    padding: 5px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s, opacity .2s;
+    white-space: nowrap;
+}
+
+.btn-activar {
+    background: rgba(34, 197, 94, .16);
+    color: #15803d;
+}
+
+.btn-activar:hover {
+    background: rgba(34, 197, 94, .28);
+}
+
+.btn-desactivar {
+    background: rgba(239, 68, 68, .14);
+    color: #b91c1c;
+}
+
+.btn-desactivar:hover {
+    background: rgba(239, 68, 68, .26);
+}
+
+.btn-clave {
+    background: rgba(99, 102, 241, .14);
+    color: var(--brand-1);
+}
+
+.btn-clave:hover {
+    background: rgba(99, 102, 241, .26);
+}
+
+/* Dark mode overrides for admin buttons */
+:root[data-theme="oscuro"] .badge.admin-badge {
+    background: rgba(99, 102, 241, .22);
+    color: #a5b4fc;
+}
+
+:root[data-theme="oscuro"] .badge.empleado-badge {
+    background: rgba(34, 197, 94, .22);
+    color: #86efac;
+}
+
+:root[data-theme="oscuro"] .btn-activar {
+    background: rgba(34, 197, 94, .22);
+    color: #86efac;
+}
+
+:root[data-theme="oscuro"] .btn-desactivar {
+    background: rgba(239, 68, 68, .22);
+    color: #fca5a5;
+}
+
+:root[data-theme="oscuro"] .btn-clave {
+    background: rgba(99, 102, 241, .22);
+    color: #a5b4fc;
+}
+
+.recuperar-info {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    margin: 12px 0 4px;
+}
+
 /* ============ Reportes de Empleados ============ */
 .report-desc {
     color: var(--text-muted);
