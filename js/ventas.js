@@ -877,11 +877,15 @@ restaurarDiaConsultado();
 cargarVentasDelDia();
 
 /* ---------- Ocultar "Total del Día" para empleados ---------- */
-(function ocultarTotalDiaSiEmpleado() {
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { auth } from './firebase-config.js';
+
+onAuthStateChanged(auth, (user) => {
+    if (!user) return;
     const wrapper = document.getElementById('totalDiaContadoWrapper');
     if (!wrapper) return;
     const rol = obtenerRol();
     if (rol && rol !== 'admin') {
         wrapper.style.display = 'none';
     }
-})();
+});

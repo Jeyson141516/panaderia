@@ -8,6 +8,7 @@
    - Se carga únicamente en usuarios.html.
    ============================================================ */
 import { auth } from './firebase-config.js';
+import { obtenerRol } from './auth.js';
 import {
     onAuthStateChanged,
     signInWithEmailAndPassword
@@ -118,6 +119,11 @@ formCrearEmpleado.addEventListener('submit', (e) => {
     e.preventDefault();
 
     ejecutarConBotonBloqueado(formCrearEmpleado.querySelector('[type="submit"]'), async () => {
+        if (obtenerRol() !== 'admin') {
+            toast('No tienes permiso para crear empleados.', 'error');
+            return;
+        }
+
         const email = limpiarTexto(crearEmail.value, 254).toLowerCase();
         const clave = crearClave.value;
         const rol = crearRol.value;
@@ -181,6 +187,11 @@ cancelarModalClave.addEventListener('click', () => { modalClave.style.display = 
 modalClave.addEventListener('click', (e) => { if (e.target === modalClave) modalClave.style.display = 'none'; });
 
 enviarRecuperacionBtn.addEventListener('click', async () => {
+    if (obtenerRol() !== 'admin') {
+        toast('No tienes permiso para recuperar contraseñas.', 'error');
+        return;
+    }
+
     const email = enviarRecuperacionBtn.dataset.email;
     if (!email) return;
 
@@ -213,6 +224,11 @@ cancelarModalEstado.addEventListener('click', () => { modalEstado.style.display 
 modalEstado.addEventListener('click', (e) => { if (e.target === modalEstado) modalEstado.style.display = 'none'; });
 
 confirmarEstadoBtn.addEventListener('click', async () => {
+    if (obtenerRol() !== 'admin') {
+        toast('No tienes permiso para cambiar el estado de empleados.', 'error');
+        return;
+    }
+
     const uid = estadoUid.value;
     const accion = confirmarEstadoBtn.dataset.accion;
     const nuevoEstado = accion === 'inactivar' ? 'inactivo' : 'activo';

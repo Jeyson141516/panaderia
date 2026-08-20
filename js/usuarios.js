@@ -8,6 +8,7 @@
      estándar (sin Cloud Functions ni planes de pago).
    ============================================================ */
 import { db, auth } from './firebase-config.js';
+import { obtenerRol } from './auth.js';
 import {
     doc,
     getDoc,
@@ -26,6 +27,12 @@ import {
 
 const COL_USUARIOS = 'usuarios';
 
+function _requiereAdmin() {
+    if (obtenerRol() !== 'admin') {
+        throw new Error('Solo los administradores pueden realizar esta acción.');
+    }
+}
+
 /* ---------- API Firestore (lectura) ---------- */
 
 /**
@@ -43,6 +50,7 @@ export async function obtenerUsuarioPorUID(uid) {
  * @returns {Promise<Array>}
  */
 export async function listarUsuarios() {
+    _requiereAdmin();
     const snap = await getDocs(query(collection(db, COL_USUARIOS), orderBy("email")));
     return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
@@ -66,6 +74,7 @@ export async function obtenerRolUsuarioActual() {
  * @param {"activo"|"inactivo"} nuevoEstado
  */
 export async function actualizarEstado(uid, nuevoEstado) {
+    _requiereAdmin();
     await updateDoc(doc(db, COL_USUARIOS, uid), { estado: nuevoEstado });
 }
 
@@ -80,6 +89,7 @@ export async function actualizarEstado(uid, nuevoEstado) {
  * @returns {Promise<string>} UID del nuevo usuario.
  */
 export async function crearEmpleado(email, password, rol = 'empleado') {
+    _requiereAdmin();
     const adminUser = auth.currentUser;
     if (!adminUser) throw new Error('No hay sesión de administrador activa.');
 

@@ -223,13 +223,3 @@ if (btnLogout) {
         }
     });
 }
-
-window.PanaderiaAuth = {
-    iniciarSesion,
-    cerrarSesion,
-    obtenerUsuario,
-    estaAutenticado,
-    verificarEstadoUsuario,
-    obtenerRol,
-    obtenerDatosUsuario
-};
