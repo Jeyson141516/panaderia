@@ -1,4 +1,5 @@
 import { db, getDocsSafe } from './firebase-config.js';
+import { obtenerRol } from './auth.js';
 import { collection, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
 import { limpiarTexto, validarMonto, ejecutarConBotonBloqueado, conTimeout } from './utils.js';
@@ -269,6 +270,11 @@ formMovimiento.addEventListener('submit', (e) => {
     e.preventDefault();
 
     ejecutarConBotonBloqueado(e.submitter, async () => {
+        if (obtenerRol() !== 'admin') {
+            toast("No tienes permiso para registrar movimientos.", "error");
+            return;
+        }
+
         const trabajador = document.getElementById('trabajador').value;
         const tipo = document.getElementById('tipoMovimiento').value;
         const concepto = limpiarTexto(document.getElementById('concepto').value, 120);

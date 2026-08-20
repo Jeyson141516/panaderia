@@ -139,20 +139,22 @@ function revelarContenido() {
 }
 
 /**
- * Aplica restricciones de navegación según el rol del usuario.
- * - Empleados: solo ven "Ventas" en la barra lateral.
- * - Admins: ven todo.
+ * Elimina del DOM los enlaces de navegación que apuntan a módulos
+ * de administración. Se ejecuta solo para usuarios con rol "empleado"
+ * y evita que el contenido sea visible aunque se manipule el DOM desde F12.
  */
-function _aplicarRestriccionesPorRol(rol) {
-    if (rol !== 'admin') {
-        document.body.classList.add('empleado-role');
-    } else {
-        document.body.classList.remove('empleado-role');
-    }
+function _eliminarNavAdmin() {
+    const HREFS_ADMIN = ['inventario.html', 'personal.html', 'reportes.html', 'usuarios.html'];
+    document.querySelectorAll('nav ul li').forEach((li) => {
+        const a = li.querySelector('a');
+        if (a && HREFS_ADMIN.includes(a.getAttribute('href'))) {
+            li.remove();
+        }
+    });
 }
 
 /** Páginas que solo un administrador puede acceder. */
-const PAGINAS_ADMIN = ['usuarios.html'];
+const PAGINAS_ADMIN = ['inventario.html', 'personal.html', 'reportes.html', 'usuarios.html'];
 
 /* ---------- Route Guard ---------- */
 onAuthStateChanged(auth, async (usuario) => {
@@ -192,7 +194,10 @@ onAuthStateChanged(auth, async (usuario) => {
             return;
         }
 
-        _aplicarRestriccionesPorRol(_usuarioRol);
+        // Eliminar enlaces de admin del DOM si el usuario es empleado
+        if (_usuarioRol !== 'admin') {
+            _eliminarNavAdmin();
+        }
 
         revelarContenido();
         iniciarControlInactividad(expulsarPorInactividad);

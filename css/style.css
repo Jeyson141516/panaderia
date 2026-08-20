@@ -202,14 +202,6 @@ nav ul li a .nav-badge {
     animation: saldoIn .18s ease-out;
 }
 
-/* Ocultar módulos no permitidos para empleados (solo ven Ventas) */
-body.empleado-role nav ul li a[href="inventario.html"],
-body.empleado-role nav ul li a[href="personal.html"],
-body.empleado-role nav ul li a[href="reportes.html"],
-body.empleado-role nav ul li a.admin-only-link {
-    display: none !important;
-}
-
 /* Pie de la barra: usuario + cerrar sesión */
 nav .nav-footer {
     margin-top: auto;

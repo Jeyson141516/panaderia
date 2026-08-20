@@ -1,4 +1,5 @@
 import { db, getDocsSafe } from './firebase-config.js';
+import { obtenerRol } from './auth.js';
 import { collection, addDoc, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
 import { normalizarTexto, limpiarTexto, validarMonto, ejecutarConBotonBloqueado, conTimeout, leerCache, guardarCache, esCoincidenciaFuzzy } from './utils.js';
@@ -58,6 +59,11 @@ formGasto.addEventListener('submit', (e) => {
     e.preventDefault();
 
     ejecutarConBotonBloqueado(e.submitter, async () => {
+        if (obtenerRol() !== 'admin') {
+            toast("No tienes permiso para registrar gastos.", "error");
+            return;
+        }
+
         let producto = productoSeleccionado;
 
         if (!producto) {
@@ -225,6 +231,10 @@ function renderInventario() {
 }
 
 async function eliminarProducto(id) {
+    if (obtenerRol() !== 'admin') {
+        toast("No tienes permiso para eliminar productos.", "error");
+        return;
+    }
     if (!confirm("¿Eliminar este producto del inventario?")) return;
 
     try {
@@ -280,6 +290,11 @@ function cerrarModalProductoHandler() {
 
 guardarProductoModal.addEventListener('click', () => {
     ejecutarConBotonBloqueado(guardarProductoModal, async () => {
+        if (obtenerRol() !== 'admin') {
+            toast("No tienes permiso para agregar productos.", "error");
+            return;
+        }
+
         const nombre = limpiarTexto(nuevoNombreProducto.value, 80);
 
         if (!nombre) {
