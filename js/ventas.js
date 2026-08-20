@@ -229,6 +229,16 @@ function actualizarAlertaDeudores() {
 async function cargarVentasDelDia() {
     try {
         const { anio, mes, diaNum, inicio, fin } = rangoDiaConsultado();
+
+        /* Validación defensiva: empleados no pueden consultar fechas > 72h */
+        const rol = obtenerRol();
+        if (rol && rol !== 'admin' && !_fechaDentroDelRango(fechaFiltroDia.value)) {
+            toast("Solo puedes consultar las últimas 72 horas.", "warning");
+            fechaFiltroDia.value = fechaHoyLocal();
+            localStorage.setItem(CLAVE_DIA_CONSULTA, fechaFiltroDia.value);
+            return;
+        }
+
         ventasDiaTitulo.textContent = `Ventas del Día (${formatearFechaLocal(inicio)})`;
 
         const [querySnapshot] = await Promise.all([
@@ -876,16 +886,53 @@ formVenta.addEventListener('submit', (e) => {
 restaurarDiaConsultado();
 cargarVentasDelDia();
 
-/* ---------- Ocultar "Total del Día" para empleados ---------- */
+/* ---------- Restricciones por rol (empleado vs admin) ---------- */
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { auth } from './firebase-config.js';
 
+/** Máximo de días hacia atrás que un empleado puede consultar (72 horas). */
+const MAX_DIAS_EMPLEADO = 2;
+
+/**
+ * Devuelve true si la fecha solicitada está dentro del rango permitido
+ * para empleados (últimas 72 horas: Hoy, Ayer, Antes de ayer).
+ * Se calcula contra la fecha LOCAL del navegador.
+ */
+function _fechaDentroDelRango(fechaStr) {
+    if (!fechaStr) return true;
+    const partes = fechaStr.split('-').map(Number);
+    if (partes.length !== 3 || partes.some(Number.isNaN)) return false;
+    const solicitada = new Date(partes[0], partes[1] - 1, partes[2]);
+    const hoy = new Date();
+    const inicioMaximo = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - MAX_DIAS_EMPLEADO);
+    return solicitada >= inicioMaximo && solicitada <= hoy;
+}
+
+/**
+ * Restringe la fecha en el campo date y recarga si fue manipulada.
+ * Solo se ejecuta para empleados.
+ */
+function _restringirFechaEmpleado() {
+    const valor = fechaFiltroDia.value;
+    if (valor && !_fechaDentroDelRango(valor)) {
+        fechaFiltroDia.value = fechaHoyLocal();
+        localStorage.setItem(CLAVE_DIA_CONSULTA, fechaFiltroDia.value);
+        localStorage.setItem(CLAVE_MODO_DIA_CONSULTA, '0');
+    }
+    marcarRapidoDiaActivo(fechaFiltroDia.value);
+}
+
 onAuthStateChanged(auth, (user) => {
     if (!user) return;
-    const wrapper = document.getElementById('totalDiaContadoWrapper');
-    if (!wrapper) return;
     const rol = obtenerRol();
-    if (rol && rol !== 'admin') {
-        wrapper.style.display = 'none';
-    }
+    if (rol === 'admin') return;
+
+    /* 1. Eliminar del DOM: Total Cobrado y selector de calendario */
+    const wrapper = document.getElementById('totalDiaContadoWrapper');
+    if (wrapper) wrapper.remove();
+    if (fechaFiltroDia) fechaFiltroDia.remove();
+
+    /* 2. Forzar rango de 72h en la carga actual y futuras */
+    _restringirFechaEmpleado();
+    cargarVentasDelDia();
 });
