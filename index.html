@@ -113,13 +113,13 @@
                     <button type="button" class="btn-rapido-dia" data-dias="0" title="Ver las ventas de hoy">Hoy</button>
                     <button type="button" class="btn-rapido-dia" data-dias="1" title="Ver las ventas de ayer">Ayer</button>
                     <button type="button" class="btn-rapido-dia" data-dias="2" title="Ver las ventas de antes de ayer">Antes de ayer</button>
-                    <input type="date" id="fechaFiltroDia" class="fecha-dia-input admin-only" aria-label="Filtrar ventas del día por fecha" title="Elige el día a consultar">
+                    <input type="date" id="fechaFiltroDia" class="fecha-dia-input admin-only" style="display:none;" aria-label="Filtrar ventas del día por fecha" title="Elige el día a consultar">
                 </div>
             </div>
-            <div class="total-dia-contado admin-only" id="totalDiaContadoWrapper" role="status" aria-live="polite">
+            <div class="total-dia-contado admin-only" id="totalDiaContadoWrapper" style="display:none;" role="status" aria-live="polite">
                 <div class="total-dia-info">
-                    <span class="total-dia-label">💰 Total Cobrado (Contado)</span>
-                    <small class="total-dia-sub">Efectivo del día: ventas al contado + abonos recibidos · se actualiza al buscar</small>
+                    <span class="total-dia-label">💰 Tarjeta de Totales — Efectivo Real Recaudado</span>
+                    <small class="total-dia-sub">(Suma total de ventas del día + Bonos) − Créditos/Ventas pendientes de pago · se actualiza al buscar</small>
                 </div>
                 <span class="total-dia-monto" id="totalDiaContado">$0.00</span>
             </div>

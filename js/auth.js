@@ -23,6 +23,12 @@ import {
 let _usuarioRol = null;
 let _usuarioDatos = null;
 
+// Promesa que se resuelve cuando el rol del usuario conectado ha sido
+// cargado desde Firestore. Permite a las páginas esperar el rol real
+// antes de renderizar la interfaz (evita condiciones de carrera).
+let _resolverRolListo = null;
+const _rolListoPromise = new Promise((resolve) => { _resolverRolListo = resolve; });
+
 // Sistema de temas (claro/oscuro): aplica la preferencia guardada y
 // activa los botones de alternancia de todas las páginas.
 inicializarTema();
@@ -116,6 +122,15 @@ export function obtenerRol() {
 }
 
 /**
+ * Devuelve una promesa que se resuelve con el rol ("admin" o "empleado")
+ * una vez cargado desde Firestore. Úsala para renderizar la interfaz
+ * según el rol: cuandoRolListo().then(renderizarInterfazPorRol);
+ */
+export function cuandoRolListo() {
+    return _rolListoPromise;
+}
+
+/**
  * Devuelve los datos completos del documento "usuarios" del
  * usuario actual (cacheados por el route guard).
  */
@@ -187,6 +202,7 @@ onAuthStateChanged(auth, async (usuario) => {
 
         _usuarioRol = datos.rol || 'empleado';
         _usuarioDatos = datos;
+        _resolverRolListo(_usuarioRol);
 
         // Bloquear acceso a páginas de admin si el usuario es empleado
         if (PAGINAS_ADMIN.includes(pagina) && _usuarioRol !== 'admin') {

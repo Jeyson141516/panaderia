@@ -1,5 +1,5 @@
 import { db, getDocsSafe } from './firebase-config.js';
-import { obtenerRol } from './auth.js';
+import { obtenerRol, cuandoRolListo } from './auth.js';
 import { collection, addDoc, query, where, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { toast, escapeHtml } from './ui.js';
 import { normalizarTexto, limpiarTexto, validarEntero, validarMonto, validarTelefono, ejecutarConBotonBloqueado, conTimeout, leerCache, guardarCache, esCoincidenciaFuzzy } from './utils.js';
@@ -185,22 +185,35 @@ function aplicarFiltroBuscadorVentas() {
 }
 
 /**
- * Contador en tiempo real del total cobrado.
- * Suma ventas de contado (estado 'pagado') Y abonos (estado 'abono').
- * Excluye fiados ('debe'). Respeta el buscador activo: si el usuario filtra,
- * el total refleja solo las filas visibles.
+ * Tarjeta de Totales (visible solo para el administrador).
+ * Calcula el efectivo real recaudado del día con la fórmula:
+ *   (Suma total de ventas del día + Bonos) - (Créditos/Ventas pendientes de pago)
+ * - Suma total de ventas: registros 'pagado' y 'debe' del día consultado.
+ * - Bonos: pagos/abonos recibidos (estado 'abono').
+ * - Créditos pendientes: ventas fiadas ('debe') que aún no generan efectivo.
+ * Respeta el buscador activo: si hay filtro, el total refleja solo lo visible.
  */
 function actualizarContadorDia() {
-    let total = 0;
+    let sumaVentas = 0;
+    let bonos = 0;
+    let creditosPendientes = 0;
 
     ventasDiaCache.forEach((v) => {
-        if (v.estado !== 'pagado' && v.estado !== 'abono') return;
         if (!esCoincidenciaFuzzy(v.cliente, buscadorVentasDia.value)) return;
-        total += v.total;
+        if (v.estado === 'abono') {
+            bonos += v.total;
+        } else if (v.estado === 'debe') {
+            sumaVentas += v.total;
+            creditosPendientes += v.total;
+        } else {
+            sumaVentas += v.total;
+        }
     });
 
+    const efectivoReal = (sumaVentas + bonos) - creditosPendientes;
+
     if (totalDiaContado) {
-        totalDiaContado.textContent = formatearMoneda(total);
+        totalDiaContado.textContent = formatearMoneda(efectivoReal);
     }
 }
 
@@ -886,9 +899,7 @@ formVenta.addEventListener('submit', (e) => {
 restaurarDiaConsultado();
 cargarVentasDelDia();
 
-/* ---------- Restricciones por rol (empleado vs admin) ---------- */
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { auth } from './firebase-config.js';
+/* ---------- Restricciones y visibilidad por rol (empleado vs admin) ---------- */
 
 /** Máximo de días hacia atrás que un empleado puede consultar (72 horas). */
 const MAX_DIAS_EMPLEADO = 2;
@@ -922,17 +933,43 @@ function _restringirFechaEmpleado() {
     marcarRapidoDiaActivo(fechaFiltroDia.value);
 }
 
-onAuthStateChanged(auth, (user) => {
-    if (!user) return;
-    const rol = obtenerRol();
-    if (rol === 'admin') return;
+/**
+ * Ajusta la visibilidad de los elementos exclusivos según el rol obtenido
+ * desde Firestore (colección "usuarios", campo "rol").
+ *
+ * - Botones de filtro rápido ("Hoy", "Ayer", "Antes de ayer"):
+ *   SIEMPRE visibles para admin y empleado.
+ * - Selector de fecha personalizado (#fechaFiltroDia):
+ *   visible SOLO si el rol es estrictamente 'admin'.
+ * - Tarjeta de Totales / Efectivo Real (#totalDiaContadoWrapper):
+ *   visible SOLO si el rol es estrictamente 'admin'.
+ */
+function renderizarInterfazPorRol(rol) {
+    const esAdmin = rol === 'admin';
 
-    /* 1. Eliminar del DOM: Total Cobrado y selector de calendario */
-    const wrapper = document.getElementById('totalDiaContadoWrapper');
-    if (wrapper) wrapper.remove();
-    if (fechaFiltroDia) fechaFiltroDia.remove();
+    // Selector de calendario: solo administrador
+    if (fechaFiltroDia) {
+        fechaFiltroDia.style.display = esAdmin ? 'block' : 'none';
+    }
 
-    /* 2. Forzar rango de 72h en la carga actual y futuras */
-    _restringirFechaEmpleado();
-    cargarVentasDelDia();
-});
+    // Tarjeta de Totales (efectivo real recaudado): solo administrador
+    const wrapperTotales = document.getElementById('totalDiaContadoWrapper');
+    if (wrapperTotales) {
+        wrapperTotales.style.display = esAdmin ? 'flex' : 'none';
+    }
+
+    // Empleado: forzar el rango máximo de 72h en la consulta actual y
+    // recargar si el día guardado quedó fuera del rango permitido.
+    if (!esAdmin) {
+        const valorPrevio = fechaFiltroDia ? fechaFiltroDia.value : '';
+        _restringirFechaEmpleado();
+        if (fechaFiltroDia && fechaFiltroDia.value !== valorPrevio) {
+            cargarVentasDelDia().catch(() => {});
+        }
+    }
+}
+
+// Al cargar la página se espera el rol real leído desde Firestore y luego
+// se aplica la visibilidad correspondiente. Los elementos exclusivos del
+// admin arrancan ocultos en el HTML (display:none) hasta confirmar el rol.
+cuandoRolListo().then(renderizarInterfazPorRol);
