@@ -1827,6 +1827,7 @@ input[type="submit"]:disabled:hover {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: rgba(255, 255, 255, 0.6);
+    -webkit-tap-highlight-color: transparent;
 }
 
 .seg button {
@@ -1841,11 +1842,26 @@ input[type="submit"]:disabled:hover {
     font-weight: 600;
     cursor: pointer;
     transition: background-color .12s ease, color .12s ease;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
-.seg button:hover {
-    color: var(--text);
-    background: rgba(99, 102, 241, .08);
+@media (hover: hover) {
+    .seg button:hover {
+        color: var(--text);
+        background: rgba(99, 102, 241, .08);
+    }
+}
+
+.seg button:focus {
+    outline: none;
+}
+
+.seg button:focus-visible {
+    outline: 2px solid var(--brand-1);
+    outline-offset: 2px;
 }
 
 .seg button[aria-pressed="true"] {
@@ -2590,8 +2606,10 @@ nav, main {
     background: rgba(255, 255, 255, 0.05);
 }
 
-:root[data-theme="oscuro"] .seg button:hover {
-    background: rgba(255, 255, 255, .07);
+@media (hover: hover) {
+    :root[data-theme="oscuro"] .seg button:hover {
+        background: rgba(255, 255, 255, .07);
+    }
 }
 
 :root[data-theme="oscuro"] .seg button[aria-pressed="true"] {
