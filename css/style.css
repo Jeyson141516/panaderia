@@ -1819,6 +1819,121 @@ input[type="submit"]:disabled:hover {
     margin-top: 4px;
 }
 
+/* ============ Selector segmentado (Contado / Crédito) ============ */
+.seg {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.seg button {
+    flex: 1;
+    height: 44px;
+    border: 0;
+    border-radius: calc(var(--radius-sm) - 4px);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color .12s ease, color .12s ease;
+}
+
+.seg button:hover {
+    color: var(--text);
+    background: rgba(99, 102, 241, .08);
+}
+
+.seg button[aria-pressed="true"] {
+    background: var(--text);
+    color: #ffffff;
+}
+
+.seg-hint {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+}
+
+.seg-hint[hidden] {
+    display: none;
+}
+
+/* ============ Overlay de éxito (Venta registrada) ============ */
+.overlay-exito {
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+    display: none;
+    place-items: center;
+    padding: 20px;
+    background: rgba(17, 24, 39, .38);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+
+.overlay-exito.show {
+    display: grid;
+}
+
+.exito-card {
+    background: rgba(255, 255, 255, .96);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 36px 44px;
+    text-align: center;
+    animation: exitoPop .22s ease;
+}
+
+@keyframes exitoPop {
+    from { transform: scale(.94); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
+
+.exito-check {
+    width: 68px;
+    height: 68px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    background: var(--success);
+    display: grid;
+    place-items: center;
+    box-shadow: 0 10px 28px rgba(34, 197, 94, .45);
+}
+
+.exito-card h3 {
+    margin: 0 0 4px;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    color: var(--text);
+}
+
+.exito-card p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.exito-detalle {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+@media (max-width: 576px) {
+    .exito-card {
+        padding: 28px 22px;
+    }
+}
+
 /* ============ Toasts ============ */.toast-container {
     position: fixed;
     bottom: 24px;
@@ -2466,6 +2581,28 @@ nav, main {
 
 /* Modales */
 :root[data-theme="oscuro"] .modal-card {
+    background: rgba(27, 31, 45, 0.96);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Selector segmentado */
+:root[data-theme="oscuro"] .seg {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+:root[data-theme="oscuro"] .seg button:hover {
+    background: rgba(255, 255, 255, .07);
+}
+
+:root[data-theme="oscuro"] .seg button[aria-pressed="true"] {
+    color: #171b26;
+}
+
+:root[data-theme="oscuro"] .overlay-exito {
+    background: rgba(5, 8, 16, .55);
+}
+
+:root[data-theme="oscuro"] .exito-card {
     background: rgba(27, 31, 45, 0.96);
     border-color: rgba(255, 255, 255, 0.1);
 }

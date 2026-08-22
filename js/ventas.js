@@ -824,6 +824,29 @@ guardarClienteModal.addEventListener('click', () => {
         cerrarModalHandler();
     });
 });
+const overlayVentaExitosa = document.getElementById('overlayVentaExitosa');
+const ventaExitosaDetalle = document.getElementById('ventaExitosaDetalle');
+let timeoutOverlayVenta = null;
+
+function mostrarOverlayVentaRegistrada(cantidad, total, estadoPago) {
+    if (!overlayVentaExitosa || !ventaExitosaDetalle) {
+        toast(estadoPago === 'debe'
+            ? "¡Venta registrada como FIADA (Pendiente)!"
+            : "¡Venta registrada con éxito!");
+        return;
+    }
+
+    ventaExitosaDetalle.textContent = `$${total.toFixed(2)} · ${cantidad} ${cantidad === 1 ? 'funda' : 'fundas'} al ${estadoPago === 'debe' ? 'crédito' : 'contado'}`;
+    overlayVentaExitosa.classList.add('show');
+    overlayVentaExitosa.setAttribute('aria-hidden', 'false');
+
+    clearTimeout(timeoutOverlayVenta);
+    timeoutOverlayVenta = setTimeout(() => {
+        overlayVentaExitosa.classList.remove('show');
+        overlayVentaExitosa.setAttribute('aria-hidden', 'true');
+    }, 1800);
+}
+
 async function guardarVenta(cliente, cantidad, estadoPago, fechaVenta) {
     const total = cantidad * PRECIO_FUNDA;
     try {
@@ -842,9 +865,7 @@ async function guardarVenta(cliente, cantidad, estadoPago, fechaVenta) {
         }
     }
 
-    toast(estadoPago === 'debe'
-        ? "¡Venta registrada como FIADA (Pendiente)!"
-        : "¡Venta registrada con éxito!");
+    mostrarOverlayVentaRegistrada(cantidad, total, estadoPago);
 
     const fechaSeleccionada = fechaVentaSelect.value;
     formVenta.reset();

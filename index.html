@@ -82,11 +82,13 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="estadoPago">Tipo de Transacción</label>
-                    <select id="estadoPago">
-                        <option value="pagado">Pagado (Contado)</option>
-                        <option value="debe">Fiado (Pendiente)</option>
-                    </select>
+                    <label>Tipo de Transacción</label>
+                    <div class="seg" id="segEstadoPago" role="group" aria-label="Tipo de transacción">
+                        <button type="button" data-valor="pagado" aria-pressed="true">Contado</button>
+                        <button type="button" data-valor="debe" aria-pressed="false">Crédito</button>
+                    </div>
+                    <input type="hidden" id="estadoPago" value="pagado">
+                    <p class="seg-hint" id="creditoHint" hidden>El crédito queda como saldo pendiente en la cuenta del cliente.</p>
                 </div>
 
                 <div class="form-group">
@@ -264,10 +266,53 @@
         </div>
     </div>
 
+    <div id="overlayVentaExitosa" class="overlay-exito" aria-hidden="true">
+        <div class="exito-card" role="alertdialog" aria-live="polite" aria-label="Venta registrada">
+            <div class="exito-check">
+                <svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true">
+                    <path d="M8 17.5l6.5 6.5L26 10.5" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h3>Venta registrada</h3>
+            <p class="exito-detalle" id="ventaExitosaDetalle"></p>
+        </div>
+    </div>
+
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
     <script type="module" src="js/ventas.js"></script>
     <script type="module" src="js/deudores.js"></script>
+    <script>
+        (function () {
+            var grupo = document.getElementById('segEstadoPago');
+            var estadoPago = document.getElementById('estadoPago');
+            var creditoHint = document.getElementById('creditoHint');
+            if (!grupo || !estadoPago) return;
+
+            function sincronizar() {
+                Array.prototype.forEach.call(grupo.querySelectorAll('button[data-valor]'), function (btn) {
+                    btn.setAttribute('aria-pressed', String(btn.dataset.valor === estadoPago.value));
+                });
+                if (creditoHint) creditoHint.hidden = estadoPago.value !== 'debe';
+            }
+
+            grupo.addEventListener('click', function (e) {
+                var btn = e.target.closest ? e.target.closest('button[data-valor]') : null;
+                if (!btn) return;
+                estadoPago.value = btn.dataset.valor;
+                sincronizar();
+            });
+
+            var formVenta = document.getElementById('formVenta');
+            if (formVenta) {
+                formVenta.addEventListener('reset', function () {
+                    requestAnimationFrame(sincronizar);
+                });
+            }
+
+            sincronizar();
+        })();
+    </script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {
