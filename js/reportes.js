@@ -76,6 +76,10 @@ periodoFiltro.addEventListener('change', () => {
             const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
             fechaInicioInput.value = fechaISO(primerDia);
             fechaFinInput.value = fechaISO(hoy);
+        } else if (periodoFiltro.value === 'anio') {
+            const primerDiaAnio = new Date(hoy.getFullYear(), 0, 1);
+            fechaInicioInput.value = fechaISO(primerDiaAnio);
+            fechaFinInput.value = fechaISO(hoy);
         }
     }
 
@@ -192,7 +196,12 @@ async function cargarReporte() {
         const totalFacturado = totalContado + totalAbonos;
         const totalPendiente = Math.max(0, totalCredito - totalAbonos);
 
-        const insights = calcularInsightsDeVenta({ ventas: querySnapshot.docs.map((d) => d.data()), periodo: periodoFiltro.value });
+        const insights = calcularInsightsDeVenta({
+            ventas: querySnapshot.docs.map((d) => d.data()),
+            periodo: periodoFiltro.value,
+            inicioISO: fechaInicioInput.value,
+            finISO: fechaFinInput.value
+        });
 
         ultimoReporte = {
             fechaInicio: fechaReporteSegura(fechaInicioInput.value),
@@ -263,6 +272,7 @@ async function cargarReporte() {
 }
 
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 function fechaVentaLocal(venta) {
     const fecha = venta.fecha && venta.fecha.toDate
@@ -271,9 +281,28 @@ function fechaVentaLocal(venta) {
     return Number.isNaN(fecha.getTime()) ? null : fecha;
 }
 
+function resolverTipoInsight(periodo, inicioISO, finISO) {
+    if (periodo === 'semana' || periodo === 'mes' || periodo === 'anio') return periodo;
+    if (periodo !== 'personalizado' || !inicioISO || !finISO) return '';
+    const inicio = new Date(`${inicioISO}T00:00:00`);
+    const fin = new Date(`${finISO}T00:00:00`);
+    if (Number.isNaN(inicio.getTime()) || Number.isNaN(fin.getTime()) || fin < inicio) return '';
+    const diasRango = Math.round((fin - inicio) / 86400000) + 1;
+    if (diasRango <= 7) return 'semana';
+    const mismoMes = inicio.getFullYear() === fin.getFullYear() && inicio.getMonth() === fin.getMonth();
+    if (diasRango <= 31 && mismoMes) return 'mes';
+    return 'anio';
+}
+
 function calcularInsightsDeVenta(data) {
     const ventas = (data && data.ventas) || (Array.isArray(data) ? data : []);
     const periodo = (data && data.periodo) || '';
+    const tipoRango = resolverTipoInsight(periodo, (data && data.inicioISO) || '', (data && data.finISO) || '');
+
+    // Las ventas fechadas en el futuro se descartan para no inflar semanas
+    // ni meses que aún no ocurren.
+    const corte = new Date();
+    corte.setHours(23, 59, 59, 999);
 
     // Solo cuenta la facturación real (contado + crédito), igual que el "Total Facturado".
     const facturadas = [];
@@ -281,14 +310,13 @@ function calcularInsightsDeVenta(data) {
         const estado = venta.estadoPago || 'pagado';
         if (estado !== 'pagado' && estado !== 'debe') return;
         const fecha = fechaVentaLocal(venta);
-        if (!fecha) return;
+        if (!fecha || fecha > corte) return;
         facturadas.push({
             monto: Number(venta.totalVenta) || 0,
             anio: fecha.getFullYear(),
             mes: fecha.getMonth() + 1,
             dia: fecha.getDate(),
-            nombreDia: DIAS_SEMANA[fecha.getDay()],
-            fecha
+            nombreDia: DIAS_SEMANA[fecha.getDay()]
         });
     });
 
@@ -305,46 +333,78 @@ function calcularInsightsDeVenta(data) {
         porDia.set(clave, entrada);
     });
     const dias = [...porDia.values()];
+    const totalPeriodo = dias.reduce((s, d) => s + d.monto, 0);
 
-    if (periodo === 'semana') {
-        // Día Estrella: día de la semana con mayor facturación acumulada.
-        const porDiaSemana = new Map();
-        facturadas.forEach((v) => {
-            porDiaSemana.set(v.nombreDia, (porDiaSemana.get(v.nombreDia) || 0) + v.monto);
+    if (tipoRango === 'semana') {
+        let diaMayor = dias[0];
+        let diaMenor = dias[0];
+        dias.forEach((d) => {
+            if (d.monto > diaMayor.monto) diaMayor = d;
+            if (d.monto < diaMenor.monto) diaMenor = d;
         });
-        let diaEstrella = null;
-        porDiaSemana.forEach((monto, nombre) => {
-            if (!diaEstrella || monto > diaEstrella.monto) diaEstrella = { nombre, monto };
-        });
-        return { tipo: 'semana', diaEstrella };
+        return {
+            tipo: 'semana',
+            diaMayor: { nombre: diaMayor.nombreDia, fecha: diaMayor.fechaClave, monto: diaMayor.monto },
+            diaMenor: { nombre: diaMenor.nombreDia, fecha: diaMenor.fechaClave, monto: diaMenor.monto },
+            promedioDiario: totalPeriodo / dias.length,
+            diasConVentas: dias.length
+        };
     }
 
-    if (periodo === 'mes') {
-        // Semana del mes: 1 = días 1-7, 2 = 8-14, 3 = 15-21, 4 = 22-28, 5 = 29+.
+    if (tipoRango === 'mes') {
+        // Semanas del mes en bloques fijos de 7 días: 1 = días 1-7, 2 = 8-14,
+        // 3 = 15-21, 4 = 22-28, 5 = 29+. La clave incluye año y mes para que
+        // un rango que cruce dos meses nunca mezcle ventas de ambos.
         const porSemana = new Map();
         dias.forEach((d) => {
             const numero = Math.floor((d.dia - 1) / 7) + 1;
-            porSemana.set(numero, (porSemana.get(numero) || 0) + d.monto);
+            const clave = `${d.anio}-${String(d.mes).padStart(2, '0')}-S${numero}`;
+            porSemana.set(clave, (porSemana.get(clave) || 0) + d.monto);
         });
 
-        let semanaGanadora = null;
-        porSemana.forEach((monto, numero) => {
-            if (!semanaGanadora || monto > semanaGanadora.monto) semanaGanadora = { numero, monto };
+        let semanaMayor = null;
+        let semanaMenor = null;
+        porSemana.forEach((monto, clave) => {
+            const numero = Number(clave.split('-S')[1]);
+            if (!semanaMayor || monto > semanaMayor.monto) semanaMayor = { numero, monto };
+            if (!semanaMenor || monto < semanaMenor.monto) semanaMenor = { numero, monto };
         });
 
-        // Día del mes con mayor facturación.
-        let mejorDiaMes = null;
+        let mejorDiaMes = dias[0];
         dias.forEach((d) => {
-            if (!mejorDiaMes || d.monto > mejorDiaMes.monto) mejorDiaMes = d;
+            if (d.monto > mejorDiaMes.monto) mejorDiaMes = d;
         });
 
-        const totalMes = dias.reduce((s, d) => s + d.monto, 0);
         return {
             tipo: 'mes',
-            semanaGanadora: { numero: semanaGanadora.numero, monto: semanaGanadora.monto },
-            mejorDiaMes: { nombre: mejorDiaMes.nombreDia, fecha: mejorDiaMes.fechaClave, monto: mejorDiaMes.monto },
-            promedioDiario: totalMes / dias.length,
-            diasConVentas: dias.length
+            semanaMayor,
+            semanaMenor,
+            mejorDiaMes: { nombre: mejorDiaMes.nombreDia, fecha: mejorDiaMes.fechaClave, monto: mejorDiaMes.monto }
+        };
+    }
+
+    if (tipoRango === 'anio') {
+        const porMes = new Map();
+        facturadas.forEach((v) => {
+            const clave = String(v.mes).padStart(2, '0');
+            const entrada = porMes.get(clave) || { numero: v.mes, nombre: MESES[v.mes - 1], monto: 0 };
+            entrada.monto += v.monto;
+            porMes.set(clave, entrada);
+        });
+        const meses = [...porMes.values()];
+        let mesMayor = meses[0];
+        let mesMenor = meses[0];
+        meses.forEach((m) => {
+            if (m.monto > mesMayor.monto) mesMayor = m;
+            if (m.monto < mesMenor.monto) mesMenor = m;
+        });
+
+        return {
+            tipo: 'anio',
+            mesMayor: { nombre: mesMayor.nombre, monto: mesMayor.monto },
+            mesMenor: { nombre: mesMenor.nombre, monto: mesMenor.monto },
+            promedioMensual: totalPeriodo / meses.length,
+            mesesConVentas: meses.length
         };
     }
 
@@ -468,32 +528,32 @@ function renderInsights(insights) {
         return;
     }
 
+    const tarjeta = (lbl, val, montoHtml) => `
+            <div class="insight-card">
+                <span class="insight-lbl">${escapeHtml(lbl)}</span>
+                <span class="insight-val">${val}</span>
+                <span class="insight-monto">${montoHtml}</span>
+            </div>`;
     const tarjetas = [];
 
     if (insights.tipo === 'semana') {
-        tarjetas.push(`
-            <div class="insight-card">
-                <span class="insight-lbl">Día con mayor facturación</span>
-                <span class="insight-val">${escapeHtml(insights.diaEstrella.nombre)}</span>
-                <span class="insight-monto">${formatearMoneda(insights.diaEstrella.monto)}</span>
-            </div>`);
+        tarjetas.push(
+            tarjeta('Día con mayor facturación', escapeHtml(insights.diaMayor.nombre), formatearMoneda(insights.diaMayor.monto)),
+            tarjeta('Día con menor facturación', escapeHtml(insights.diaMenor.nombre), formatearMoneda(insights.diaMenor.monto)),
+            tarjeta('Promedio de venta diaria', formatearMoneda(insights.promedioDiario), `${insights.diasConVentas} días con ventas`)
+        );
     } else if (insights.tipo === 'mes') {
-        tarjetas.push(`
-            <div class="insight-card">
-                <span class="insight-lbl">Día con mayor facturación</span>
-                <span class="insight-val">${escapeHtml(insights.mejorDiaMes.nombre)}</span>
-                <span class="insight-monto">${formatearMoneda(insights.mejorDiaMes.monto)}</span>
-            </div>
-            <div class="insight-card">
-                <span class="insight-lbl">Semana con mayor facturación</span>
-                <span class="insight-val">Semana ${insights.semanaGanadora.numero}</span>
-                <span class="insight-monto">${formatearMoneda(insights.semanaGanadora.monto)}</span>
-            </div>
-            <div class="insight-card">
-                <span class="insight-lbl">Promedio de venta diaria</span>
-                <span class="insight-val">${formatearMoneda(insights.promedioDiario)}</span>
-                <span class="insight-monto">${insights.diasConVentas} días con ventas</span>
-            </div>`);
+        tarjetas.push(
+            tarjeta('Semana con mayor facturación', `Semana ${insights.semanaMayor.numero}`, formatearMoneda(insights.semanaMayor.monto)),
+            tarjeta('Semana con menor facturación', `Semana ${insights.semanaMenor.numero}`, formatearMoneda(insights.semanaMenor.monto)),
+            tarjeta('Mejor día del mes', escapeHtml(insights.mejorDiaMes.nombre), formatearMoneda(insights.mejorDiaMes.monto))
+        );
+    } else if (insights.tipo === 'anio') {
+        tarjetas.push(
+            tarjeta('Mes con mayor facturación', escapeHtml(insights.mesMayor.nombre), formatearMoneda(insights.mesMayor.monto)),
+            tarjeta('Mes con menor facturación', escapeHtml(insights.mesMenor.nombre), formatearMoneda(insights.mesMenor.monto)),
+            tarjeta('Promedio de venta mensual', formatearMoneda(insights.promedioMensual), `${insights.mesesConVentas} meses con ventas`)
+        );
     }
 
     insightsContainer.innerHTML = `

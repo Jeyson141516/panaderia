@@ -240,11 +240,17 @@ async function descargarPdf() {
     if (r.insights && r.insights.tipo !== 'insuficiente') {
         encabezadoSeccion('Insights Inteligentes');
         if (r.insights.tipo === 'semana') {
-            textoFlujo(`Día con mayor facturación: ${r.insights.diaEstrella.nombre} — ${formatearMoneda(r.insights.diaEstrella.monto)}`, { size: 9, color: NEGRO });
-        } else {
-            textoFlujo(`Día con mayor facturación: ${r.insights.mejorDiaMes.nombre} — ${formatearMoneda(r.insights.mejorDiaMes.monto)}`, { size: 9, color: NEGRO });
-            textoFlujo(`Semana con mayor facturación: Semana ${r.insights.semanaGanadora.numero} — ${formatearMoneda(r.insights.semanaGanadora.monto)}`, { size: 9, color: NEGRO });
+            textoFlujo(`Día con mayor facturación: ${r.insights.diaMayor.nombre} — ${formatearMoneda(r.insights.diaMayor.monto)}`, { size: 9, color: NEGRO });
+            textoFlujo(`Día con menor facturación: ${r.insights.diaMenor.nombre} — ${formatearMoneda(r.insights.diaMenor.monto)}`, { size: 9, color: NEGRO });
             textoFlujo(`Promedio de venta diaria: ${formatearMoneda(r.insights.promedioDiario)} (${r.insights.diasConVentas} días con ventas)`, { size: 9, color: NEGRO });
+        } else if (r.insights.tipo === 'mes') {
+            textoFlujo(`Semana con mayor facturación: Semana ${r.insights.semanaMayor.numero} — ${formatearMoneda(r.insights.semanaMayor.monto)}`, { size: 9, color: NEGRO });
+            textoFlujo(`Semana con menor facturación: Semana ${r.insights.semanaMenor.numero} — ${formatearMoneda(r.insights.semanaMenor.monto)}`, { size: 9, color: NEGRO });
+            textoFlujo(`Mejor día del mes: ${r.insights.mejorDiaMes.nombre} — ${formatearMoneda(r.insights.mejorDiaMes.monto)}`, { size: 9, color: NEGRO });
+        } else if (r.insights.tipo === 'anio') {
+            textoFlujo(`Mes con mayor facturación: ${r.insights.mesMayor.nombre} — ${formatearMoneda(r.insights.mesMayor.monto)}`, { size: 9, color: NEGRO });
+            textoFlujo(`Mes con menor facturación: ${r.insights.mesMenor.nombre} — ${formatearMoneda(r.insights.mesMenor.monto)}`, { size: 9, color: NEGRO });
+            textoFlujo(`Promedio de venta mensual: ${formatearMoneda(r.insights.promedioMensual)} (${r.insights.mesesConVentas} meses con ventas)`, { size: 9, color: NEGRO });
         }
     }
 

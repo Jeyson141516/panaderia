@@ -901,14 +901,19 @@ input[type="submit"]:disabled:hover {
 }
 
 .insights-grid {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
-    flex-wrap: wrap;
     margin-top: 4px;
 }
 
+@media (max-width: 768px) {
+    .insights-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .insight-card {
-    flex: 1 1 200px;
     min-width: 0;
     background: var(--glass-bg);
     border: 1px solid var(--border);

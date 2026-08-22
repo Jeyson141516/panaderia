@@ -35,40 +35,35 @@ function pintarInsightsHtml(r) {
         return '';
     }
 
+    const tarjeta = (lbl, val, monto) => `
+                <div class="insight-card">
+                    <span class="insight-lbl">${lbl}</span>
+                    <span class="insight-val">${val}</span>
+                    <span class="insight-monto">${monto}</span>
+                </div>`;
+    let tarjetas = '';
+
     if (ins.tipo === 'semana') {
-        return `
-            <div id="insightsContainer" class="insights">
-                ${seccion}
-                <div class="insights-grid">
-                    <div class="insight-card">
-                        <span class="insight-lbl">Día con mayor facturación</span>
-                        <span class="insight-val">${escapeHtml(ins.diaEstrella.nombre)}</span>
-                        <span class="insight-monto">${formatearMoneda(ins.diaEstrella.monto)}</span>
-                    </div>
-                </div>
-            </div>`;
+        tarjetas =
+            tarjeta('Día con mayor facturación', escapeHtml(ins.diaMayor.nombre), formatearMoneda(ins.diaMayor.monto)) +
+            tarjeta('Día con menor facturación', escapeHtml(ins.diaMenor.nombre), formatearMoneda(ins.diaMenor.monto)) +
+            tarjeta('Promedio de venta diaria', formatearMoneda(ins.promedioDiario), `${ins.diasConVentas} días con ventas`);
+    } else if (ins.tipo === 'mes') {
+        tarjetas =
+            tarjeta('Semana con mayor facturación', `Semana ${ins.semanaMayor.numero}`, formatearMoneda(ins.semanaMayor.monto)) +
+            tarjeta('Semana con menor facturación', `Semana ${ins.semanaMenor.numero}`, formatearMoneda(ins.semanaMenor.monto)) +
+            tarjeta('Mejor día del mes', escapeHtml(ins.mejorDiaMes.nombre), formatearMoneda(ins.mejorDiaMes.monto));
+    } else if (ins.tipo === 'anio') {
+        tarjetas =
+            tarjeta('Mes con mayor facturación', escapeHtml(ins.mesMayor.nombre), formatearMoneda(ins.mesMayor.monto)) +
+            tarjeta('Mes con menor facturación', escapeHtml(ins.mesMenor.nombre), formatearMoneda(ins.mesMenor.monto)) +
+            tarjeta('Promedio de venta mensual', formatearMoneda(ins.promedioMensual), `${ins.mesesConVentas} meses con ventas`);
     }
 
     return `
         <div id="insightsContainer" class="insights">
             ${seccion}
-            <div class="insights-grid">
-                <div class="insight-card">
-                    <span class="insight-lbl">Día con mayor facturación</span>
-                    <span class="insight-val">${escapeHtml(ins.mejorDiaMes.nombre)}</span>
-                    <span class="insight-monto">${formatearMoneda(ins.mejorDiaMes.monto)}</span>
-                </div>
-                <div class="insight-card">
-                    <span class="insight-lbl">Semana con mayor facturación</span>
-                    <span class="insight-val">Semana ${ins.semanaGanadora.numero}</span>
-                    <span class="insight-monto">${formatearMoneda(ins.semanaGanadora.monto)}</span>
-                </div>
-                <div class="insight-card">
-                    <span class="insight-lbl">Promedio de venta diaria</span>
-                    <span class="insight-val">${formatearMoneda(ins.promedioDiario)}</span>
-                    <span class="insight-monto">${ins.diasConVentas} días con ventas</span>
-                </div>
-            </div>
+            <div class="insights-grid">${tarjetas}</div>
         </div>`;
 }
 
