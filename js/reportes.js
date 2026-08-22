@@ -322,24 +322,14 @@ function calcularInsightsDeVenta(data) {
     if (periodo === 'mes') {
         // Semana del mes: 1 = días 1-7, 2 = 8-14, 3 = 15-21, 4 = 22-28, 5 = 29+.
         const porSemana = new Map();
-        const diasPorSemana = new Map();
         dias.forEach((d) => {
             const numero = Math.floor((d.dia - 1) / 7) + 1;
             porSemana.set(numero, (porSemana.get(numero) || 0) + d.monto);
-            if (!diasPorSemana.has(numero)) diasPorSemana.set(numero, []);
-            diasPorSemana.get(numero).push(d);
         });
 
         let semanaGanadora = null;
         porSemana.forEach((monto, numero) => {
             if (!semanaGanadora || monto > semanaGanadora.monto) semanaGanadora = { numero, monto };
-        });
-
-        // Mejor día específico dentro de la semana ganadora.
-        const diasSemanaGanadora = diasPorSemana.get(semanaGanadora.numero) || [];
-        let mejorDiaSemana = null;
-        diasSemanaGanadora.forEach((d) => {
-            if (!mejorDiaSemana || d.monto > mejorDiaSemana.monto) mejorDiaSemana = d;
         });
 
         // Día del mes con mayor facturación.
@@ -348,11 +338,13 @@ function calcularInsightsDeVenta(data) {
             if (!mejorDiaMes || d.monto > mejorDiaMes.monto) mejorDiaMes = d;
         });
 
+        const totalMes = dias.reduce((s, d) => s + d.monto, 0);
         return {
             tipo: 'mes',
             semanaGanadora: { numero: semanaGanadora.numero, monto: semanaGanadora.monto },
             mejorDiaMes: { nombre: mejorDiaMes.nombreDia, fecha: mejorDiaMes.fechaClave, monto: mejorDiaMes.monto },
-            mejorDiaSemana: { nombre: mejorDiaSemana.nombreDia, fecha: mejorDiaSemana.fechaClave, monto: mejorDiaSemana.monto }
+            promedioDiario: totalMes / dias.length,
+            diasConVentas: dias.length
         };
     }
 
@@ -498,9 +490,9 @@ function renderInsights(insights) {
                 <span class="insight-monto">${formatearMoneda(insights.semanaGanadora.monto)}</span>
             </div>
             <div class="insight-card">
-                <span class="insight-lbl">Mejor día de la mejor semana</span>
-                <span class="insight-val">${escapeHtml(insights.mejorDiaSemana.nombre)}</span>
-                <span class="insight-monto">${formatearMoneda(insights.mejorDiaSemana.monto)}</span>
+                <span class="insight-lbl">Promedio de venta diaria</span>
+                <span class="insight-val">${formatearMoneda(insights.promedioDiario)}</span>
+                <span class="insight-monto">${insights.diasConVentas} días con ventas</span>
             </div>`);
     }
 

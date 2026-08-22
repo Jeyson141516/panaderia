@@ -64,9 +64,9 @@ function pintarInsightsHtml(r) {
                     <span class="insight-monto">${formatearMoneda(ins.semanaGanadora.monto)}</span>
                 </div>
                 <div class="insight-card">
-                    <span class="insight-lbl">Mejor día de la mejor semana</span>
-                    <span class="insight-val">${escapeHtml(ins.mejorDiaSemana.nombre)}</span>
-                    <span class="insight-monto">${formatearMoneda(ins.mejorDiaSemana.monto)}</span>
+                    <span class="insight-lbl">Promedio de venta diaria</span>
+                    <span class="insight-val">${formatearMoneda(ins.promedioDiario)}</span>
+                    <span class="insight-monto">${ins.diasConVentas} días con ventas</span>
                 </div>
             </div>
         </div>`;

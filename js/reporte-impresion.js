@@ -244,7 +244,7 @@ async function descargarPdf() {
         } else {
             textoFlujo(`Día con mayor facturación: ${r.insights.mejorDiaMes.nombre} — ${formatearMoneda(r.insights.mejorDiaMes.monto)}`, { size: 9, color: NEGRO });
             textoFlujo(`Semana con mayor facturación: Semana ${r.insights.semanaGanadora.numero} — ${formatearMoneda(r.insights.semanaGanadora.monto)}`, { size: 9, color: NEGRO });
-            textoFlujo(`Mejor día de la mejor semana: ${r.insights.mejorDiaSemana.nombre} — ${formatearMoneda(r.insights.mejorDiaSemana.monto)}`, { size: 9, color: NEGRO });
+            textoFlujo(`Promedio de venta diaria: ${formatearMoneda(r.insights.promedioDiario)} (${r.insights.diasConVentas} días con ventas)`, { size: 9, color: NEGRO });
         }
     }
 
