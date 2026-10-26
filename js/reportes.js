@@ -122,6 +122,23 @@ function fechaReporteSegura(valor) {
     return /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : '';
 }
 
+// Adelantos y pagos se leen completos (el Neto Real depende de todo el
+// historial). Se reutilizan 60 s para no releerlos al cambiar filtros.
+const TTL_PERSONAL_MS = 60 * 1000;
+const cachePersonal = new Map();
+
+function leerColeccionCacheada(nombre) {
+    const guardado = cachePersonal.get(nombre);
+    if (guardado && Date.now() - guardado.hora < TTL_PERSONAL_MS) {
+        return Promise.resolve(guardado.snap);
+    }
+    return getDocsSafe(query(collection(db, nombre), orderBy("fecha", "asc")))
+        .then((snap) => {
+            cachePersonal.set(nombre, { snap, hora: Date.now() });
+            return snap;
+        });
+}
+
 async function cargarReporte() {
     btnConsultar.disabled = true;
 
@@ -129,8 +146,8 @@ async function cargarReporte() {
         const [querySnapshot, gastosSnap, adelantosSnap, pagosSnap] = await Promise.all([
             getDocsSafe(construirQuery()),
             getDocsSafe(query(collection(db, "gastos_inventario"), ...rangoFechas(), orderBy("fecha", "desc"))),
-            getDocsSafe(query(collection(db, "adelantos"), orderBy("fecha", "asc"))),
-            getDocsSafe(query(collection(db, "pagos_personal"), orderBy("fecha", "asc")))
+            leerColeccionCacheada("adelantos"),
+            leerColeccionCacheada("pagos_personal")
         ]);
 
         let totalContado = 0;
