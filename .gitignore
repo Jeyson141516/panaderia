@@ -22,6 +22,6 @@ firestore.rules.backup
 .env.*
 !.env.example
 
-# Configuración generada (contiene datos de .env)
- 
+# Nota: js/config.js se mantiene versionado a propósito (el sitio publicado lo necesita).
+# Solo contiene claves web públicas de Firebase.
 backend/functions/.env
