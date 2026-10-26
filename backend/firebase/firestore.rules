@@ -126,9 +126,11 @@ service cloud.firestore {
       // Lectura: cualquier usuario autenticado (para verificar estado/rol).
       allow read: if isSignedIn();
 
-      // Escritura: el propio usuario al registrarse O un admin.
+      // Creación: un admin puede crear cualquier rol; el propio usuario
+      // solo puede crear su documento como "empleado" (evita que alguien
+      // con una cuenta nueva se asigne el rol admin).
       allow create: if isSignedIn()
-        && (request.auth.uid == uid || isAdmin())
+        && ((request.auth.uid == uid && request.resource.data.rol == "empleado") || isAdmin())
         && request.resource.data.email is string
         && request.resource.data.rol in ["admin", "empleado"]
         && request.resource.data.estado in ["activo", "inactivo"];

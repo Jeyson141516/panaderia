@@ -100,7 +100,7 @@ export async function crearEmpleado(email, password, rol = 'empleado') {
     // 2. Escribir documento en la colección "usuarios"
     await setDoc(doc(db, COL_USUARIOS, nuevoUID), {
         email: email.toLowerCase().trim(),
-        rol,
+        rol: 'empleado', // el rol admin lo asigna un admin después (cambiarRol)
         estado: 'activo',
         fechaCreacion: new Date()
     });
@@ -108,6 +108,16 @@ export async function crearEmpleado(email, password, rol = 'empleado') {
     // 3. Cerrar sesión del nuevo usuario (el admin re-autentica en admin-usuarios.js)
     await signOut(auth);
     return nuevoUID;
+}
+
+/**
+ * Cambia el rol de un usuario. Solo un admin autenticado puede hacerlo
+ * (lo exigen también las reglas de Firestore).
+ */
+export async function cambiarRol(uid, nuevoRol) {
+    _requiereAdmin();
+    if (!['admin', 'empleado'].includes(nuevoRol)) throw new Error('Rol inválido.');
+    await updateDoc(doc(db, COL_USUARIOS, uid), { rol: nuevoRol });
 }
 
 /**

@@ -16,6 +16,7 @@ import {
 import {
     listarUsuarios,
     crearEmpleado,
+    cambiarRol,
     actualizarEstado,
     enviarRecuperacionClave
 } from './usuarios.js';
@@ -144,7 +145,7 @@ formCrearEmpleado.addEventListener('submit', (e) => {
         const adminEmail = auth.currentUser ? auth.currentUser.email : '';
 
         try {
-            await crearEmpleado(email, clave, rol);
+            const nuevoUID = await crearEmpleado(email, clave, rol);
             toast(`Empleado ${email} creado con éxito.`);
             modalCrear.style.display = 'none';
 
@@ -153,6 +154,9 @@ formCrearEmpleado.addEventListener('submit', (e) => {
                 if (adminClave) {
                     try {
                         await signInWithEmailAndPassword(auth, adminEmail, adminClave);
+                        if (rol === 'admin') {
+                            await cambiarRol(nuevoUID, 'admin');
+                        }
                     } catch (reauthErr) {
                         console.error('Error re-autenticando admin:', reauthErr);
                         toast('No se pudo re-autenticar. Recarga la página e inicia sesión.', 'warning');
